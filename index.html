@@ -361,7 +361,6 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     <div class="rail-foot">
       <button class="toggle" id="themeBtn" type="button" role="switch" aria-checked="false"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Dark mode</span></button>
       <button class="btn" id="clientViewBtn" aria-pressed="false" type="button">Client view</button>
-      <button class="btn" id="newClientBtn" type="button" hidden>New client</button>
       <button class="btn" id="refreshBtn" type="button">Refresh</button>
       <button class="btn" id="signOutBtn" type="button">Sign out</button>
     </div>
@@ -479,7 +478,6 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     list.innerHTML = ov + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
     pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
     $("#clientViewBtn").setAttribute("aria-pressed", String(state.clientView));
-    $("#newClientBtn").hidden = !state.canEdit || state.clientView;
   }
 
   function scopeStatus(client, items) {
@@ -963,7 +961,6 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   $("#search").addEventListener("input", e => { state.q = e.target.value; renderRail(); });
   document.addEventListener("keydown", e => { if ((e.key==="Enter"||e.key===" ") && e.target.matches?.(".prow[data-ws]")) { e.preventDefault(); state.ws = e.target.dataset.ws; renderMain(); } });
   $("#clientViewBtn").addEventListener("click", () => { state.clientView = !state.clientView; try{localStorage.setItem("hub.clientView", state.clientView?"1":"0")}catch{}; render(); });
-  $("#newClientBtn").addEventListener("click", () => { $("#clientForm").reset(); $("#clientDlg").showModal(); });
   $("#cancelClient").addEventListener("click", () => $("#clientDlg").close());
   $("#clientForm").addEventListener("submit", addClient);
   $("#refreshBtn").addEventListener("click", () => load(true));
