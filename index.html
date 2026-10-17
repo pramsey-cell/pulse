@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-title" content="Pulse">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Pulse">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#fff;color:#1e2a30;font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  @media (prefers-color-scheme:dark){body{background:#12181b;color:#e8eef0}}
+  main{text-align:center;padding:24px}
+  img{width:96px;height:96px;border-radius:22px}
+  a{color:#1aa6c9}
+  .btn{display:inline-block;margin-top:8px;padding:10px 22px;border-radius:999px;background:#1aa6c9;color:#fff;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <img src="icon-192.png" alt="">
+  <h1 style="font-size:24px;margin:12px 0 4px">Pulse</h1>
+  <p id="msg">Victoria Gillespie Consulting Group client hub</p>
+  <p><a id="go" class="btn" href="https://script.google.com/a/macros/victoriagillespieconsulting.com/s/AKfycbwX7DVWeyj8A00pKqZJHMZSAUGt0at8B268LG4XGc2HwfmZyyi4bMXMBQ8NE5TW-icd/exec">Open Pulse</a></p>
+  <p id="tip" style="font-size:14px;opacity:.75;max-width:340px;margin:16px auto 0">To add Pulse to your dock or home screen: in Chrome, use the menu, then Cast, save and share, then Install page as app. On iPhone, tap Share in Safari, then Add to Home Screen.</p>
+</main>
+<script>
+  // Opened from the installed icon (or with ?launch): go straight to the app.
+  // Opened in a normal browser tab: stay here so the page can be installed.
+  var installed = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  if (installed || /[?&]launch\b/.test(location.search)) {
+    document.getElementById("msg").textContent = "Opening Pulse\u2026";
+    document.getElementById("tip").hidden = true;
+    location.replace(document.getElementById("go").href);
+  }
+</script>
+</body>
+</html>
