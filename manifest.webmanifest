@@ -1,7 +1,7 @@
 {
   "name": "Pulse",
   "short_name": "Pulse",
-  "start_url": "./?launch=1",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
