@@ -384,7 +384,13 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 .sc .n{font:600 17px/1.2 var(--f-display)}
 .sc .n span{font-weight:400;font-size:12.5px;color:var(--muted)}
 .sc .share{width:100%}
-.filters .sc-tg{margin-left:auto}
+.filters .toggle.sc-tg{margin-left:auto;width:auto;min-height:0;padding:3px 12px 3px 4px;border-radius:999px;font-size:13px;gap:8px}
+input[role="switch"]{appearance:none;-webkit-appearance:none;flex:none;position:relative;width:40px;height:22px;margin:0;padding:0;border:0;border-radius:999px;background:var(--line);cursor:pointer;transition:background .2s;vertical-align:middle}
+input[role="switch"]::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
+input[role="switch"]:checked{background:var(--ring-a)}
+input[role="switch"]:checked::before{transform:translateX(18px)}
+input[role="switch"]:disabled{opacity:.5;cursor:default}
+@media (max-width:760px){.rail .rail-foot #clientViewBtn .tg-text::after{content:"Client"}}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -485,7 +491,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     <ul class="clients" id="clientList"></ul></div><div class="menu-scrim" id="menuScrim" aria-hidden="true"></div>
     <div class="rail-foot">
       <button class="toggle" id="themeBtn" type="button" role="switch" aria-checked="false"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Dark mode</span></button>
-      <button class="btn" id="clientViewBtn" aria-pressed="false" type="button">Client view</button>
+      <button class="toggle" id="clientViewBtn" type="button" role="switch" aria-checked="false"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Client view</span></button>
       <button class="btn" id="refreshBtn" type="button">Refresh</button>
       <button class="btn" id="signOutBtn" type="button">Sign out</button>
     </div>
@@ -515,7 +521,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     <label>Fulfils scope item<select id="f-scope"><option value="">None</option></select></label>
     <label>Details<textarea id="f-note" rows="3" maxlength="600"></textarea></label>
     <label>Files or links<input id="f-files" maxlength="300" placeholder="e.g. VP Advocacy Exec Summary.pdf"></label>
-    <label class="check"><input type="checkbox" id="f-internal"> Internal only (hidden in client view)</label>
+    <label class="check"><input type="checkbox" role="switch" id="f-internal"> Internal only (hidden in client view)</label>
     <div class="actions">
       <button class="btn" type="button" id="deleteItem" hidden>Delete</button>
       <span style="display:flex;gap:8px;margin-left:auto">
@@ -604,7 +610,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     $("#navList").innerHTML = ov; list.innerHTML = (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
     pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
     { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
-    $("#clientViewBtn").setAttribute("aria-pressed", String(state.clientView));
+    $("#clientViewBtn").setAttribute("aria-checked", String(state.clientView));
   }
 
   function scopeStatus(client, items) {
@@ -973,7 +979,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         <div class="stat"><div class="n">${nPlaced}</div><div class="l">placed</div></div>
         <div class="stat"><div class="n">${nApp}</div><div class="l">applicants scored</div></div>
       </div>
-      <div class="filters">${[["all","All searches"],["active","Active"],["past","Past"]].map(([k,l]) => `<button type="button" data-tfilter="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}${state.clientView ? "" : `<button type="button" class="sc-tg" data-tscores aria-pressed="${showSc}">Show scores</button>`}</div></div>
+      <div class="filters">${[["all","All searches"],["active","Active"],["past","Past"]].map(([k,l]) => `<button type="button" data-tfilter="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}${state.clientView ? "" : `<button type="button" class="toggle sc-tg" data-tscores role="switch" aria-checked="${showSc}"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Show scores</span></button>`}</div></div>
       <section class="section col-full"><div class="tgrid">${list.length ? list.map(card).join("") : `<div class="empty">${all.length ? "No searches match this filter." : "Search campaigns will appear here once their trackers are loaded."}</div>`}</div></section>`;
   }
 
@@ -1159,7 +1165,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
           <button type="button" class="btn" id="rpPrint">Print or save PDF</button>
         </div>
         <details class="rp-custom"${state.rpCustOpen ? " open" : ""}><summary>Choose what's in this report</summary>
-          <div class="rp-checks">${RP_SECS[t].map(([k,l]) => `<label><input type="checkbox" data-rsec="${t}.${k}"${rpOff[t+"."+k] ? "" : " checked"}> ${esc(l)}</label>`).join("")}</div>
+          <div class="rp-checks">${RP_SECS[t].map(([k,l]) => `<label><input type="checkbox" role="switch" data-rsec="${t}.${k}"${rpOff[t+"."+k] ? "" : " checked"}> ${esc(l)}</label>`).join("")}</div>
         </details>
         ${typeof rpMailPanel === "function" ? rpMailPanel() : ""}
       </div></div>
@@ -1181,19 +1187,19 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     return `<details class="rp-custom" id="rpMail"${state.rpMailOpen ? " open" : ""}><summary>Monthly email</summary>
       ${!s ? `<div class="note" style="margin-top:8px">${esc(rpMailMsg || "Loading settings…")}</div>` : `
       <div class="rp-checks">
-        <label><input type="checkbox" data-rmail="enabled"${s.enabled ? " checked" : ""}> Send the email automatically</label>
+        <label><input type="checkbox" role="switch" data-rmail="enabled"${s.enabled ? " checked" : ""}> Send the email automatically</label>
       </div>
       <div class="rp-row rp-when" style="margin-top:8px">
         <label class="note">Next email (${esc(s.tz)})<br><input type="datetime-local" data-rmailnext step="60" min="${esc(s.now)}" value="${esc(s.next || "")}" style="font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);margin-top:4px"></label>
       </div>
       <div class="note" style="margin-top:6px">${rpWhenText(s)}</div>
       <div class="rp-checks">
-        <label><input type="checkbox" data-rmail="repeat"${s.repeat ? " checked" : ""}> Repeat every month on that day and time</label>
-        <label><input type="checkbox" data-rmail="copyOnPick"${s.copyOnPick ? " checked" : ""}> Email me a copy as soon as I pick a date</label>
-        <label><input type="checkbox" data-rmail="attachPdf"${s.attachPdf ? " checked" : ""}> Attach a PDF</label>
+        <label><input type="checkbox" role="switch" data-rmail="repeat"${s.repeat ? " checked" : ""}> Repeat every month on that day and time</label>
+        <label><input type="checkbox" role="switch" data-rmail="copyOnPick"${s.copyOnPick ? " checked" : ""}> Email me a copy as soon as I pick a date</label>
+        <label><input type="checkbox" role="switch" data-rmail="attachPdf"${s.attachPdf ? " checked" : ""}> Attach a PDF</label>
       </div>
       <div class="note" style="margin-top:10px">Include in the email and PDF:</div>
-      <div class="rp-checks">${s.list.map(([k, l]) => `<label><input type="checkbox" data-rmailsec="${k}"${s.sections[k] ? " checked" : ""}> ${esc(l)}</label>`).join("")}</div>
+      <div class="rp-checks">${s.list.map(([k, l]) => `<label><input type="checkbox" role="switch" data-rmailsec="${k}"${s.sections[k] ? " checked" : ""}> ${esc(l)}</label>`).join("")}</div>
       <div class="rp-row" style="margin-top:12px"><span class="note">Goes to ${s.to.map(esc).join(" and ")}. Changes save automatically.</span>
         <button type="button" class="btn" id="rpMailTest">Send me a test</button></div>
       ${rpMailMsg ? `<div class="note" style="margin-top:6px">${esc(rpMailMsg)}</div>` : ""}`}
@@ -1480,7 +1486,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "7247ba23fb";
+  var BUILD = "4372ceae2f";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
