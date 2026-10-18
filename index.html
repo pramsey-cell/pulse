@@ -654,11 +654,11 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         </div>
         ${editOK ? `<div class="toolbar"><button class="btn primary" type="button" id="addItem">Add work</button></div>` : ""}
       </header>
-      ${(() => { if (state.clientView || !b.inv.length) return ""; const cy = String(new Date().getFullYear()); const cyB = b.inv.filter(i => i.date.slice(0,4) === cy).reduce((s,i)=>s+i.amount,0); return `<div class="stats fin-top" aria-label="Financial summary">
-        <div class="stat"><div class="n">${money0(b.billed)}</div><div class="l">total billed since ${esc(fmtMonth(b.first))}</div></div>
-        <div class="stat"><div class="n">${money0(b.paid)}</div><div class="l">paid</div></div>
+      ${(() => { if (state.clientView || !b.inv.length) return ""; const cy = String(new Date().getFullYear()); const cyInv = b.inv.filter(i => i.date.slice(0,4) === cy); const cyB = cyInv.reduce((s,i)=>s+i.amount,0); const pend = upcomingPayments().filter(p => p.client === c.id); const pendT = pend.reduce((s,p)=>s+p.amount,0); return `<div class="stats fin-top" aria-label="Financial summary">
+        <div class="stat"><div class="n">${money0(cyB)}</div><div class="l">billed in ${cy} · ${cyInv.length} invoice${cyInv.length===1?"":"s"}</div></div>
+        <div class="stat"><div class="n">${money0(pendT)}</div><div class="l">pending in ${cy} · ${pend.length ? `${pend.length} contract balance${pend.length===1?"":"s"} not yet invoiced` : "nothing awaiting invoice"}</div></div>
+        <div class="stat"><div class="n">${money0(b.billed)}</div><div class="l">total billed since ${esc(fmtMonth(b.first))} · ${money0(b.paid)} paid, ${b.inv.length} invoices, last ${esc(fmtDay(b.last))} ${esc(b.last.slice(0,4))}</div></div>
         <div class="stat"><div class="n ${b.open>0.005?"warn":""}">${money0(b.open)}</div><div class="l">open${b.open>0.005?` · ${b.inv.filter(i=>i.balance>0.005).length} invoice${b.inv.filter(i=>i.balance>0.005).length===1?"":"s"}`:""}</div></div>
-        <div class="stat"><div class="n">${money0(cyB)}</div><div class="l">billed in ${cy} · ${b.inv.length} invoices total, last ${esc(fmtDay(b.last))} ${esc(b.last.slice(0,4))}</div></div>
       </div>`; })()}</div>
       <div class="col-left">
 
@@ -1475,7 +1475,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "6892f3ec87";
+  var BUILD = "6e4a041af5";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
