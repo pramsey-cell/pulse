@@ -560,6 +560,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     return { inv, billed, open, paid: billed-open, fees, travel: billed-fees, first: dates[0], last: dates[dates.length-1] };
   }
   function invStatus(i) {
+    if (i.amount <= 0.005 && i.balance <= 0.005) return ["void","Not collected"];
     if (i.balance <= 0.005) return ["done","Paid"];
     const days = Math.floor((Date.now() - new Date((i.due||i.date)+"T12:00:00"))/86400000);
     if (i.balance < i.amount - 0.005) return ["active", days > 0 ? `Part paid · ${days}d late` : "Part paid"];
@@ -1475,7 +1476,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "6e4a041af5";
+  var BUILD = "6cdcf9c782";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
