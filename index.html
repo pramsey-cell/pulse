@@ -943,14 +943,14 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const list = all.filter(s => f === "all" || (f === "active" ? s.status === "Active" : s.status !== "Active"));
     const nAct = all.filter(s => s.status === "Active").length, nPlaced = all.filter(s => s.placed).length;
     const nApp = all.reduce((t,s) => t + (+s.applicants||0), 0);
-    const bandCls = b => /advance|strong|finalist|hired|placed|accept/i.test(b||"") ? "done" : /hold|maybe|consider|invite|interview|screen/i.test(b||"") ? "active" : /declin|reject|withdr|not advanc/i.test(b||"") ? "void" : "planned";
+    const bandCls = b => /advance|strong|finalist|hired|placed|accept/i.test(b||"") ? "done" : /hold|maybe|consider|invite|interview|screen|scor/i.test(b||"") ? "active" : /declin|reject|withdr|not advanc/i.test(b||"") ? "void" : "planned";
     const dates = s => s.opened ? fmtMonth(s.opened) + (s.closed ? " – " + fmtMonth(s.closed) : (s.status === "Active" ? " – now" : "")) : "";
     const card = s => {
       const top = (s.top||[]).slice().sort((a,b) => (a.rank||99) - (b.rank||99)).slice(0,10);
       const mx = +s.scoreMax || Math.max(100, ...top.map(t => +t.score||0));
       return `<details class="tcard"${s.status === "Active" ? " open" : ""}>
         <summary><div class="th">${cLogo(s.client)}<div><div class="tc"><button type="button" class="linkbtn" data-go="${esc(s.client)}">${esc(cName(s.client))}</button></div><h2>${esc(s.title)}</h2>
-          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} screened` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
+          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
           <span class="pill ${s.status === "Active" ? "active" : s.status === "Placed" ? "done" : "planned"}">${esc(s.status||"")}</span></div></summary>
         ${top.length ? `<ol class="tlist">${top.map((t,i) => `<li><span class="rk">${esc(t.rank||i+1)}</span>
           <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}</div>
@@ -968,7 +968,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         <div class="stat"><div class="n">${all.length}</div><div class="l">searches</div></div>
         <div class="stat"><div class="n">${nAct}</div><div class="l">active now</div></div>
         <div class="stat"><div class="n">${nPlaced}</div><div class="l">placed</div></div>
-        <div class="stat"><div class="n">${nApp}</div><div class="l">applicants screened</div></div>
+        <div class="stat"><div class="n">${nApp}</div><div class="l">applicants scored</div></div>
       </div>
       <div class="filters">${[["all","All searches"],["active","Active"],["past","Past"]].map(([k,l]) => `<button type="button" data-tfilter="${k}" aria-pressed="${f===k}">${l}</button>`).join("")}</div></div>
       <section class="section col-full"><div class="tgrid">${list.length ? list.map(card).join("") : `<div class="empty">${all.length ? "No searches match this filter." : "Search campaigns will appear here once their trackers are loaded."}</div>`}</div></section>`;
@@ -1122,7 +1122,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         <div class="stat"><div class="n">${ss.length}</div><div class="l">searches · ${ss.filter(s => s.status==="Active").length} active</div></div>
         <div class="stat"><div class="n">${ss.filter(s => s.placed).length}</div><div class="l">placements</div></div>
         <div class="stat"><div class="n">${avg === null ? "—" : avg + " days"}</div><div class="l">average time to fill${ttf.length?` (${ttf.length} search${ttf.length===1?"":"es"})`:""}</div></div>
-        <div class="stat"><div class="n">${apps}</div><div class="l">applicants screened</div></div>
+        <div class="stat"><div class="n">${apps}</div><div class="l">applicants scored</div></div>
       </div>`)}
       ${S("talent","byclient",`${cl === "all" && Object.keys(by).length ? `<section class="section"><div class="section-head"><h2>By client</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Searches</th><th class="num">Active</th><th class="num">Placed</th><th class="num">Applicants</th></tr></thead><tbody>
         ${Object.entries(by).sort((a,b) => b[1].n - a[1].n).map(([id,r]) => `<tr><td><b>${esc(rpName(id))}</b></td><td class="num">${r.n}</td><td class="num">${r.act||"—"}</td><td class="num">${r.pl||"—"}</td><td class="num">${r.apps||"—"}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`)}
@@ -1476,7 +1476,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "6cdcf9c782";
+  var BUILD = "827667853e";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
