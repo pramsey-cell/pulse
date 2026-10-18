@@ -105,6 +105,15 @@ a.chip.mail:hover{border-color:var(--accent)}
 .scope .scope-added li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
 .scope-added li:hover{color:var(--accent)}
 .scope-added .when{font:12px var(--f-mono);color:var(--muted);white-space:nowrap}
+.spath{position:relative;height:58px;margin:6px 12px 0}
+.sp-line{position:absolute;left:0;right:0;top:11px;height:4px;border-radius:2px;background:var(--planned-soft)}
+.sp-fill{position:absolute;left:0;top:11px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ring-a),var(--ring-b))}
+.sp-st,.sp-num{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;font:600 12px/1 var(--f-body);border:2px solid var(--line);background:var(--surface);color:var(--muted);box-sizing:border-box}
+.sp-st{position:absolute;top:1px;margin-left:-12px}
+.sp-st.done,.sp-num.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.sp-st.active,.sp-num.active{border-color:var(--active);color:var(--active);background:var(--active-soft)}
+.sp-lab{position:absolute;top:32px;font-size:11.5px;color:var(--muted);white-space:nowrap}
+@media (max-width:640px){.sp-yr{display:none}.sp-lab{font-size:11px}}
 .scope ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .scope li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:baseline}
 .tick{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);display:inline-block;transform:translateY(3px)}
@@ -667,9 +676,8 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         <div class="section-head"><h2>Initial engagement vs. today</h2><span class="note">What the first scope promised, and how the work has grown since</span></div>
         <div class="scope">
           <div class="shead">${head}</div>
-          <div class="sbar" role="img" aria-label="${esc(head)}">${scope.map(s => `<span class="sb ${s.st}" title="${esc(s.label + ": " + (STATUS[s.st] || s.st))}"></span>`).join("")}${added.map(w => `<span class="sb added" title="${esc("Added: " + w.name)}"></span>`).join("")}</div>
-          <div class="slg"><span><i class="sb done"></i>Delivered</span><span><i class="sb active"></i>In progress</span><span><i class="sb planned"></i>Not started</span>${added.length ? `<span><i class="sb added"></i>Added beyond the original scope</span>` : ""}</div>
-          <ol>${scope.map(s => `<li><span class="tick ${s.st==="done"?"on":s.st==="active"?"half":""}" aria-hidden="true"></span><span>${esc(s.label)}</span><span class="when">${s.last ? esc(fmtDay(s.last)+" "+s.last.slice(0,4)) : esc(STATUS[s.st])}</span></li>`).join("")}</ol>
+          ${(() => { const n = scope.length; const pos = i => n > 1 ? i / (n - 1) * 100 : 50; let ld = -1; scope.forEach((s, i) => { if (s.st === "done") ld = i; }); const lab = s => s.last ? esc(fmtDay(s.last)) + `<span class="sp-yr"> ’${s.last.slice(2, 4)}</span>` : esc(STATUS[s.st] || ""); return `<div class="spath" role="img" aria-label="${esc(head)}"><div class="sp-line"></div><div class="sp-fill" style="width:${ld > 0 ? pos(ld) : 0}%"></div>${scope.map((s, i) => { const p = pos(i); const al = n > 1 && i === 0 ? "left:0" : n > 1 && i === n - 1 ? "right:0" : `left:${p}%;transform:translateX(-50%)`; return `<span class="sp-st ${s.st}" style="left:${p}%" title="${esc(s.label)}">${i + 1}</span><span class="sp-lab" style="${al}">${lab(s)}</span>`; }).join("")}</div>`; })()}
+          <ol>${scope.map((s, i) => `<li><span class="sp-num ${s.st}" aria-hidden="true">${i + 1}</span><span>${esc(s.label)}</span><span class="when">${s.last ? esc(fmtDay(s.last)+" "+s.last.slice(0,4)) : esc(STATUS[s.st])}</span></li>`).join("")}</ol>
           ${added.length ? `<div class="scope-added"><div class="eyebrow">Added beyond the original scope</div><ul>${added.map(w => `<li data-ws="${esc(w.id)}"><span>${esc(w.name)}</span><span class="when">${esc(fmtMonth(wsStart(w)))}</span></li>`).join("")}</ul></div>` : ""}
         </div></section>`;
       })() : ""}
@@ -1467,7 +1475,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "4d69c660d7";
+  var BUILD = "9e5abbc670";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
