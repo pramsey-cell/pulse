@@ -1344,5 +1344,19 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   label();
 })();
 </script>
+<script>
+(function () {
+  var BUILD = "3b3ab2bf72";
+  function check() {
+    fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
+      if (!v || !v.build || v.build === BUILD) return;
+      var k = "pulse.reloadedFor"; try { if (sessionStorage.getItem(k) === v.build) return; sessionStorage.setItem(k, v.build); } catch (e) {}
+      location.replace(location.pathname + "?v=" + v.build + location.hash);
+    }).catch(function () {});
+  }
+  check();
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") check(); });
+})();
+</script>
 </body>
 </html>
