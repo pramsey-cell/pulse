@@ -1157,7 +1157,47 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   document.addEventListener("click", e => { const g = e.target.closest("[data-gate]"); if (g) gate(g.dataset.gate); });
   $("#lEmail").value = $("#rEmail").value = store.get("pulse.email") || "";
 
+  /* Logos come separately from the hub data: fetched once per device, shrunk to display size, kept in pulse.logos. */
+  const LOGO_KEY = "pulse.logos";
+  let logoCache = (() => { try { return JSON.parse(store.get(LOGO_KEY) || "{}") || {}; } catch (e) { return {}; } })();
+  let logoBusy = false;
+  function shrinkLogo_(src) {
+    return new Promise(res => {
+      if (!/^data:image\/(png|jpe?g|webp|gif)/i.test(src)) return res(src);
+      const im = new Image();
+      im.onload = () => {
+        try {
+          const k = Math.min(1, 480 / im.naturalWidth, 160 / im.naturalHeight);
+          if (k >= 1 && src.length < 40000) return res(src);
+          const cv = document.createElement("canvas");
+          cv.width = Math.max(1, Math.round(im.naturalWidth * k)); cv.height = Math.max(1, Math.round(im.naturalHeight * k));
+          const cx = cv.getContext("2d"); cx.imageSmoothingQuality = "high"; cx.drawImage(im, 0, 0, cv.width, cv.height);
+          let out = cv.toDataURL("image/webp", 0.92);
+          if (!out.startsWith("data:image/webp")) out = cv.toDataURL("image/png");
+          res(out.length < src.length ? out : src);
+        } catch (e) { res(src); }
+      };
+      im.onerror = () => res(src);
+      im.src = src;
+    });
+  }
+  async function fetchLogos_() {
+    if (logoBusy) return;
+    const need = [...new Set(state.clients.map(c => c.logoId).filter(f => f && !logoCache[f]))];
+    if (!need.length) return;
+    logoBusy = true;
+    try {
+      const got = (await call("getLogos", need)) || {};
+      for (const f of Object.keys(got)) logoCache[f] = await shrinkLogo_(got[f]);
+      const keep = {};
+      state.clients.forEach(c => { if (c.logoId && logoCache[c.logoId]) { keep[c.logoId] = logoCache[c.logoId]; c.logo = logoCache[c.logoId]; } });
+      logoCache = keep; store.set(LOGO_KEY, JSON.stringify(keep));
+      render();
+    } catch (e) {} finally { logoBusy = false; }
+  }
   function applyData_(d) {
+    d = Object.assign({}, d, { clients: (d.clients || []).map(c => { const x = Object.assign({}, c); if (x.logoId && logoCache[x.logoId]) x.logo = logoCache[x.logoId]; return x; }) });
+    setTimeout(fetchLogos_, 0);
     state.clients = d.clients; state.items = d.items; state.invoices = d.invoices || []; state.overrides = d.overrides || []; state.searches = d.searches || []; state.canEdit = d.canEdit;
     if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
     render();
