@@ -606,18 +606,20 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     state.items.forEach(i => { if (i.status === "done") counts[i.client] = (counts[i.client]||0) + 1; else if (i.status === "active") prog[i.client] = (prog[i.client]||0) + 1; });
     const cyr = String(new Date().getFullYear());
     const billedTot = id => state.invoices.filter(i => i.client === id).reduce((s,i)=>s+i.amount,0);
-    const isActive = c => /^active$/i.test(c.stage||"") || state.invoices.some(i => i.client === c.id && i.date.slice(0,4) === cyr);
+    const isProsp = c => /prospect|proposed/i.test(c.stage||"");
+    const isActive = c => !isProsp(c) && (/^active$/i.test(c.stage||"") || state.invoices.some(i => i.client === c.id && i.date.slice(0,4) === cyr));
     const nm = c => (c.short||c.name||"");
     const activeC = state.clients.filter(isActive).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
     { const fl = document.querySelector(".app-foot img"), bl = document.querySelector(".brand .mark img"); if (fl && bl && !fl.src) fl.src = bl.src; }
-    const otherC = state.clients.filter(c => !isActive(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
-    const sorted = [...activeC, ...otherC];
+    const prospC = state.clients.filter(isProsp).sort((a,b) => nm(a).localeCompare(nm(b)));
+    const otherC = state.clients.filter(c => !isActive(c) && !isProsp(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
+    const sorted = [...prospC, ...activeC, ...otherC];
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
     const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? `<span class="count">${state.searches.length}</span>` : ""}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
     const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
-    const aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
-    $("#navList").innerHTML = ov; list.innerHTML = (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
+    const pL = prospC.filter(matchQ), aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
+    $("#navList").innerHTML = ov; list.innerHTML = (pL.length ? grpLabel("Prospective") + pL.map(rowHtml).join("") : "") + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
     pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
     { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
     $("#clientViewBtn").setAttribute("aria-checked", String(state.clientView));
@@ -1496,7 +1498,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "5434a874dd";
+  var BUILD = "9882e17768";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
