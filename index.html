@@ -243,6 +243,10 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 .rp-row label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
 .rp-row select,.rp-row input{font:inherit;font-weight:400;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
 .rp-row .btn{margin-left:auto}
+.rp-custom{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface)}
+.rp-custom>summary{cursor:pointer;font-weight:600;font-size:13.5px}
+.rp-checks{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px}
+.rp-checks label{display:flex;gap:6px;align-items:center;font-size:13.5px;cursor:pointer}
 .report{display:flex;flex-direction:column;gap:26px;max-width:1100px}
 .rp-title{font:600 22px/1.2 var(--f-display);margin:0}
 .rp-sub{color:var(--muted);font-size:14px;margin-top:4px}
@@ -831,6 +835,14 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   }
 
   /* ---------- Reports ---------- */
+  const RP_SECS = {
+    revenue: [["summary","Summary numbers"],["trend","Revenue over time"],["byclient","By client"],["invoices","Invoice list"]],
+    receivables: [["summary","Summary numbers"],["aging","Aging"],["open","Open invoices"],["upcoming","Upcoming contract balances"]],
+    client: [["profile","About and contacts"],["summary","Summary numbers"],["years","Revenue by year"],["projects","Projects"],["contracts","Contracts"],["searches","Executive searches"],["work","Work delivered"],["invoices","Invoices"]],
+    talent: [["summary","Summary numbers"],["byclient","By client"],["searches","Search list"]]
+  };
+  let rpOff = {}; try { rpOff = JSON.parse(localStorage.getItem("pulse.rpOff") || "{}") || {}; } catch (e) {}
+  const S = (t, k, html) => rpOff[t + "." + k] ? "" : html;
   const RP_TYPES = [["revenue","Revenue"],["receivables","Receivables"],["client","Client summary"],["talent","Talent"]];
   const RP_PERIODS = [["ytd","This year to date"],["lastyear","Last year"],["qtd","This quarter to date"],["lastq","Last quarter"],["12m","Last 12 months"],["all","All time"],["custom","Custom range"]];
   function rpYmd(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
@@ -888,18 +900,18 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const rows = Object.entries(by).map(([id, r]) => ({ id, ...r, t: r.fees + r.travel })).sort((a,b) => b.t - a.t);
     const max = Math.max(1, ...rows.map(r => r.t));
     return `
-      <div class="stats">
+      ${S("revenue","summary",`<div class="stats">
         <div class="stat"><div class="n">${money0(billed)}</div><div class="l">billed${prev ? ` · ${pct === null ? "no prior revenue" : `<span class="chg ${pct>=0?"up":"down"}">${pct>=0?"+":""}${pct}%</span> vs ${esc(R.plabel)} (${money0(pb)})`}` : ""}</div></div>
         <div class="stat"><div class="n">${money0(fees)}</div><div class="l">fees · ${money0(billed-fees)} travel</div></div>
         <div class="stat"><div class="n">${money0(billed-open)}</div><div class="l">paid · <span class="${open>0.005?"warn-t":""}">${money0(open)} open</span></div></div>
         <div class="stat"><div class="n">${inv.length}</div><div class="l">invoices · ${rows.length} client${rows.length===1?"":"s"}</div></div>
-      </div>
-      ${rpTrend(inv, R.from, R.to)}
-      ${cl === "all" ? `<section class="section"><div class="section-head"><h2>By client</h2></div>
+      </div>`)}
+      ${S("revenue","trend",`${rpTrend(inv, R.from, R.to)}`)}
+      ${S("revenue","byclient",`${cl === "all" ? `<section class="section"><div class="section-head"><h2>By client</h2></div>
         ${rows.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Fees</th><th class="num">Travel</th><th class="num">Total</th><th class="num">Share</th><th class="num">Invoices</th></tr></thead><tbody>
         ${rows.map(r => `<tr data-id="${esc(r.id)}"><td><b>${esc(rpName(r.id))}</b><span class="share" style="margin-top:6px"><i style="width:${r.t/max*100}%"></i></span></td><td class="num">${money0(r.fees)}</td><td class="num">${r.travel?money0(r.travel):"—"}</td><td class="num"><b>${money0(r.t)}</b></td><td class="num">${billed?Math.round(r.t/billed*100):0}%</td><td class="num">${r.n}</td></tr>`).join("")}
-        </tbody></table></div>` : `<div class="empty">No revenue in this range.</div>`}</section>` : ""}
-      <section class="section"><div class="section-head"><h2>Invoices</h2><span class="note">Newest first</span></div>${rpInvTable(inv, cl === "all")}</section>`;
+        </tbody></table></div>` : `<div class="empty">No revenue in this range.</div>`}</section>` : ""}`)}
+      ${S("revenue","invoices",`<section class="section"><div class="section-head"><h2>Invoices</h2><span class="note">Newest first</span></div>${rpInvTable(inv, cl === "all")}</section>`)}`;
   }
   function rpReceivables(cl) {
     const today = rpYmd(new Date());
@@ -910,19 +922,19 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const ag = B.map(([l, f]) => ({ l, v: open.filter(i => f(late(i))).reduce((s,i)=>s+i.balance,0) }));
     const openTot = open.reduce((s,i)=>s+i.balance,0), lateTot = open.filter(i => late(i) > 0).reduce((s,i)=>s+i.balance,0), upTot = up.reduce((s,p)=>s+p.amount,0);
     return `
-      <div class="stats">
+      ${S("receivables","summary",`<div class="stats">
         <div class="stat"><div class="n ${openTot>0.005?"warn":""}">${money0(openTot)}</div><div class="l">open on ${open.length} invoice${open.length===1?"":"s"}</div></div>
         <div class="stat"><div class="n ${lateTot>0.005?"warn":""}">${money0(lateTot)}</div><div class="l">past due</div></div>
         <div class="stat"><div class="n">${money0(upTot)}</div><div class="l">upcoming · ${up.length} contract balance${up.length===1?"":"s"} not yet invoiced</div></div>
         <div class="stat"><div class="n">${money0(openTot + upTot)}</div><div class="l">total expected</div></div>
-      </div>
-      <section class="section"><div class="section-head"><h2>Aging</h2><span class="note">Open balances by days past due</span></div>
-        <div class="stats five">${ag.map(a => `<div class="stat"><div class="n ${a.v>0.005 && a.l!=="Not yet due"?"warn":""}">${a.v?money0(a.v):"—"}</div><div class="l">${esc(a.l)}</div></div>`).join("")}</div></section>
-      <section class="section"><div class="section-head"><h2>Open invoices</h2><span class="note">Oldest due first · balances as last synced from QuickBooks</span></div>${open.length ? rpInvTable(open, cl === "all") : `<div class="empty">Nothing is open. Every invoice is paid.</div>`}</section>
-      <section class="section"><div class="section-head"><h2>Upcoming contract balances</h2><span class="note">Second halves of 50/50 contracts, not yet invoiced</span></div>
+      </div>`)}
+      ${S("receivables","aging",`<section class="section"><div class="section-head"><h2>Aging</h2><span class="note">Open balances by days past due</span></div>
+        <div class="stats five">${ag.map(a => `<div class="stat"><div class="n ${a.v>0.005 && a.l!=="Not yet due"?"warn":""}">${a.v?money0(a.v):"—"}</div><div class="l">${esc(a.l)}</div></div>`).join("")}</div></section>`)}
+      ${S("receivables","open",`<section class="section"><div class="section-head"><h2>Open invoices</h2><span class="note">Oldest due first · balances as last synced from QuickBooks</span></div>${open.length ? rpInvTable(open, cl === "all") : `<div class="empty">Nothing is open. Every invoice is paid.</div>`}</section>`)}
+      ${S("receivables","upcoming",`<section class="section"><div class="section-head"><h2>Upcoming contract balances</h2><span class="note">Second halves of 50/50 contracts, not yet invoiced</span></div>
         ${up.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cl==="all"?"<th>Client</th>":""}<th>Contract</th><th>First half invoiced</th><th class="num">Remaining</th></tr></thead><tbody>
         ${up.map(p => `<tr>${cl==="all"?`<td>${esc(rpName(p.client))}</td>`:""}<td>${esc(p.title)}${p.label?` · ${esc(p.label)}`:""}<div class="sub">${esc(p.code||"")}${p.note?` · ${esc(p.note)}`:""}</div></td><td class="mono">${esc(p.date||"")}${p.num?` · ${p.link?`<a class="qb" href="${esc(p.link)}" target="_blank" rel="noopener">Invoice ${esc(p.num)}</a>`:"Invoice "+esc(p.num)}`:""}</td><td class="num">${money(p.amount)}</td></tr>`).join("")}
-        <tr class="tot"><td colspan="${cl==="all"?3:2}"><b>Total upcoming</b></td><td class="num"><b>${money(upTot)}</b></td></tr></tbody></table></div>` : `<div class="empty">No contract balances waiting to be invoiced.</div>`}</section>`;
+        <tr class="tot"><td colspan="${cl==="all"?3:2}"><b>Total upcoming</b></td><td class="num"><b>${money(upTot)}</b></td></tr></tbody></table></div>` : `<div class="empty">No contract balances waiting to be invoiced.</div>`}</section>`)}`;
   }
   function rpClient(id) {
     const c = state.clients.find(x => x.id === id);
@@ -939,23 +951,23 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     return `
       <div class="rp-client">${c.logo ? `<img class="${c.logoDark?"dark":""}" src="${esc(c.logo)}" alt="">` : ""}<div><div class="rp-title">${esc(c.name)}</div>
         <div class="rp-sub">${esc(c.stage||"")}${c.since?` · Client since ${esc(fmtMonth(c.since))}`:""}</div></div></div>
-      ${c.blurb ? `<p class="lede" style="max-width:none">${esc(c.blurb)}</p>` : ""}
-      ${(c.contacts||[]).length || c.billingEmail ? `<div class="contacts" style="margin-top:0">${(c.contacts||[]).map(p => `<span class="chip"><b>${esc(p.name)}</b> · ${esc(p.role||"")}${p.email?` · ${esc(p.email)}`:""}</span>`).join("")}${c.billingEmail && !(c.contacts||[]).some(p => p.email && c.billingEmail.toLowerCase().includes(p.email.toLowerCase())) ? `<span class="chip"><b>Billing</b> · ${esc(c.billingEmail)}</span>` : ""}</div>` : ""}
-      <div class="stats">
+      ${S("client","profile",`${c.blurb ? `<p class="lede" style="max-width:none">${esc(c.blurb)}</p>` : ""}
+      ${(c.contacts||[]).length || c.billingEmail ? `<div class="contacts" style="margin-top:0">${(c.contacts||[]).map(p => `<span class="chip"><b>${esc(p.name)}</b> · ${esc(p.role||"")}${p.email?` · ${esc(p.email)}`:""}</span>`).join("")}${c.billingEmail && !(c.contacts||[]).some(p => p.email && c.billingEmail.toLowerCase().includes(p.email.toLowerCase())) ? `<span class="chip"><b>Billing</b> · ${esc(c.billingEmail)}</span>` : ""}</div>` : ""}`)}
+      ${S("client","summary",`<div class="stats">
         <div class="stat"><div class="n">${money0(b.billed)}</div><div class="l">billed${b.first?` since ${esc(fmtMonth(b.first))}`:""}</div></div>
         <div class="stat"><div class="n">${money0(b.paid)}</div><div class="l">paid</div></div>
         <div class="stat"><div class="n ${b.open>0.005?"warn":""}">${money0(b.open)}</div><div class="l">open</div></div>
         <div class="stat"><div class="n">${money0(upTot)}</div><div class="l">upcoming</div></div>
-      </div>
-      ${Object.keys(years).length ? `<section class="section"><div class="section-head"><h2>Revenue by year</h2></div><div class="years">${Object.keys(years).sort().reverse().map(y => `<div class="yr"><span class="mono">${y}</span><span class="share"><i style="width:${years[y]/ymax*100}%"></i></span><span class="num">${money0(years[y])}</span></div>`).join("")}</div></section>` : ""}
-      ${W.length ? `<section class="section"><div class="section-head"><h2>Projects</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Status</th><th>Dates</th><th class="num">Fee</th></tr></thead><tbody>
-        ${W.map(w => `<tr><td><b>${esc(w.name)}</b>${w.summary?`<div class="sub">${esc(w.summary)}</div>`:""}</td><td><span class="pill ${esc(w.status||"active")}">${esc(STATUS[w.status]||w.status||"")}</span></td><td class="mono">${w.start?esc(fmtMonth(w.start)):""}${w.end?" – "+esc(fmtMonth(w.end)):""}</td><td class="num">${esc(w.fee||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
-      ${cts.length ? `<section class="section"><div class="section-head"><h2>Contracts</h2></div>${contractsTable(cts, false)}</section>` : ""}
-      ${ss.length ? `<section class="section"><div class="section-head"><h2>Executive searches</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Position</th><th>Status</th><th>Dates</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
-        ${ss.map(s => `<tr><td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${s.opened?esc(fmtMonth(s.opened)):""}${s.closed?" – "+esc(fmtMonth(s.closed)):""}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
-      ${work.length ? `<section class="section"><div class="section-head"><h2>Work delivered</h2><span class="note">${work.length} item${work.length===1?"":"s"}, newest first</span></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>What</th><th>Type</th></tr></thead><tbody>
-        ${work.slice(0,40).map(i => `<tr><td class="mono">${esc(i.date)}</td><td>${esc(i.title)}${i.note?`<div class="sub">${esc(i.note)}</div>`:""}</td><td>${esc(KIND[i.kind]||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
-      <section class="section"><div class="section-head"><h2>Invoices</h2></div>${rpInvTable(inv, false)}</section>`;
+      </div>`)}
+      ${S("client","years",`${Object.keys(years).length ? `<section class="section"><div class="section-head"><h2>Revenue by year</h2></div><div class="years">${Object.keys(years).sort().reverse().map(y => `<div class="yr"><span class="mono">${y}</span><span class="share"><i style="width:${years[y]/ymax*100}%"></i></span><span class="num">${money0(years[y])}</span></div>`).join("")}</div></section>` : ""}`)}
+      ${S("client","projects",`${W.length ? `<section class="section"><div class="section-head"><h2>Projects</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Status</th><th>Dates</th><th class="num">Fee</th></tr></thead><tbody>
+        ${W.map(w => `<tr><td><b>${esc(w.name)}</b>${w.summary?`<div class="sub">${esc(w.summary)}</div>`:""}</td><td><span class="pill ${esc(w.status||"active")}">${esc(STATUS[w.status]||w.status||"")}</span></td><td class="mono">${w.start?esc(fmtMonth(w.start)):""}${w.end?" – "+esc(fmtMonth(w.end)):""}</td><td class="num">${esc(w.fee||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`)}
+      ${S("client","contracts",`${cts.length ? `<section class="section"><div class="section-head"><h2>Contracts</h2></div>${contractsTable(cts, false)}</section>` : ""}`)}
+      ${S("client","searches",`${ss.length ? `<section class="section"><div class="section-head"><h2>Executive searches</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Position</th><th>Status</th><th>Dates</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
+        ${ss.map(s => `<tr><td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${s.opened?esc(fmtMonth(s.opened)):""}${s.closed?" – "+esc(fmtMonth(s.closed)):""}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`)}
+      ${S("client","work",`${work.length ? `<section class="section"><div class="section-head"><h2>Work delivered</h2><span class="note">${work.length} item${work.length===1?"":"s"}, newest first</span></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>What</th><th>Type</th></tr></thead><tbody>
+        ${work.slice(0,40).map(i => `<tr><td class="mono">${esc(i.date)}</td><td>${esc(i.title)}${i.note?`<div class="sub">${esc(i.note)}</div>`:""}</td><td>${esc(KIND[i.kind]||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`)}
+      ${S("client","invoices",`<section class="section"><div class="section-head"><h2>Invoices</h2></div>${rpInvTable(inv, false)}</section>`)}`;
   }
   function rpTalent(R, cl) {
     const ss = state.searches.filter(s => (cl === "all" || s.client === cl) && (R.period === "all" || (s.opened ? s.opened <= (R.to || "9999") : true) && (!s.closed || !R.from || s.closed >= R.from)));
@@ -966,17 +978,17 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const by = {}; ss.forEach(s => { const r = by[s.client] || (by[s.client] = { n:0, act:0, pl:0, apps:0 }); r.n++; if (s.status==="Active") r.act++; if (s.placed) r.pl++; r.apps += (+s.applicants||0); });
     const sorted = ss.slice().sort((a,b) => (a.status==="Active"?0:1)-(b.status==="Active"?0:1) || String(b.opened||"").localeCompare(String(a.opened||"")));
     return `
-      <div class="stats">
+      ${S("talent","summary",`<div class="stats">
         <div class="stat"><div class="n">${ss.length}</div><div class="l">searches · ${ss.filter(s => s.status==="Active").length} active</div></div>
         <div class="stat"><div class="n">${ss.filter(s => s.placed).length}</div><div class="l">placements</div></div>
         <div class="stat"><div class="n">${avg === null ? "—" : avg + " days"}</div><div class="l">average time to fill${ttf.length?` (${ttf.length} search${ttf.length===1?"":"es"})`:""}</div></div>
         <div class="stat"><div class="n">${apps}</div><div class="l">applicants screened</div></div>
-      </div>
-      ${cl === "all" && Object.keys(by).length ? `<section class="section"><div class="section-head"><h2>By client</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Searches</th><th class="num">Active</th><th class="num">Placed</th><th class="num">Applicants</th></tr></thead><tbody>
-        ${Object.entries(by).sort((a,b) => b[1].n - a[1].n).map(([id,r]) => `<tr><td><b>${esc(rpName(id))}</b></td><td class="num">${r.n}</td><td class="num">${r.act||"—"}</td><td class="num">${r.pl||"—"}</td><td class="num">${r.apps||"—"}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
-      <section class="section"><div class="section-head"><h2>Searches</h2><span class="note">Active first, then newest</span></div>
+      </div>`)}
+      ${S("talent","byclient",`${cl === "all" && Object.keys(by).length ? `<section class="section"><div class="section-head"><h2>By client</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Searches</th><th class="num">Active</th><th class="num">Placed</th><th class="num">Applicants</th></tr></thead><tbody>
+        ${Object.entries(by).sort((a,b) => b[1].n - a[1].n).map(([id,r]) => `<tr><td><b>${esc(rpName(id))}</b></td><td class="num">${r.n}</td><td class="num">${r.act||"—"}</td><td class="num">${r.pl||"—"}</td><td class="num">${r.apps||"—"}</td></tr>`).join("")}</tbody></table></div></section>` : ""}`)}
+      ${S("talent","searches",`<section class="section"><div class="section-head"><h2>Searches</h2><span class="note">Active first, then newest</span></div>
         ${sorted.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cl==="all"?"<th>Client</th>":""}<th>Position</th><th>Status</th><th>Opened</th><th>Closed</th><th class="num">Days</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
-        ${sorted.map(s => { const d = s.opened ? Math.round(((s.closed ? new Date(s.closed) : new Date()) - new Date(s.opened)) / 864e5) : null; return `<tr>${cl==="all"?`<td>${esc(rpName(s.client))}</td>`:""}<td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${esc(s.opened||"")}</td><td class="mono">${esc(s.closed||"")}</td><td class="num">${d===null?"—":d}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="empty">No searches in this range.</div>`}</section>`;
+        ${sorted.map(s => { const d = s.opened ? Math.round(((s.closed ? new Date(s.closed) : new Date()) - new Date(s.opened)) / 864e5) : null; return `<tr>${cl==="all"?`<td>${esc(rpName(s.client))}</td>`:""}<td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${esc(s.opened||"")}</td><td class="mono">${esc(s.closed||"")}</td><td class="num">${d===null?"—":d}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="empty">No searches in this range.</div>`}</section>`)}`;
   }
   function renderReports() {
     const main = $("#main"), r = state.rp, t = r.type;
@@ -1003,6 +1015,10 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
           <label>Client <select id="rpClient">${t !== "client" ? `<option value="all">All clients</option>` : ""}${clients.map(c => `<option value="${esc(c.id)}"${sel===c.id?" selected":""}>${esc(c.short||c.name)}</option>`).join("")}</select></label>
           <button type="button" class="btn" id="rpPrint">Print or save PDF</button>
         </div>
+        <details class="rp-custom"${state.rpCustOpen ? " open" : ""}><summary>Choose what's in this report</summary>
+          <div class="rp-checks">${RP_SECS[t].map(([k,l]) => `<label><input type="checkbox" data-rsec="${t}.${k}"${rpOff[t+"."+k] ? "" : " checked"}> ${esc(l)}</label>`).join("")}</div>
+        </details>
+        ${typeof rpMailPanel === "function" ? rpMailPanel() : ""}
       </div></div>
       <section class="section col-full"><div class="report">
         <div class="rp-print-head"><span>Victoria Gillespie Consulting Group · Pulse</span><span>Prepared ${esc(fmtDay(rpYmd(new Date())))}, ${new Date().getFullYear()}</span></div>
@@ -1010,6 +1026,41 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         ${body}
       </div></section>`;
   }
+
+  /* ---------- Monthly email settings (GitHub app only; saved in the Google script) ---------- */
+  let rpMail = null, rpMailMsg = "";
+  function rpMailPanel() {
+    if (state.rpMailOpen && !rpMail) {
+      rpMail = "loading";
+      call("getReportSettings").then(s => { rpMail = s; renderMain(); }).catch(e => { rpMail = null; rpMailMsg = e.message; renderMain(); });
+    }
+    const s = rpMail && rpMail !== "loading" ? rpMail : null;
+    return `<details class="rp-custom" id="rpMail"${state.rpMailOpen ? " open" : ""}><summary>Monthly email</summary>
+      ${!s ? `<div class="note" style="margin-top:8px">${esc(rpMailMsg || "Loading settings…")}</div>` : `
+      <div class="rp-checks">
+        <label><input type="checkbox" data-rmail="enabled"${s.enabled ? " checked" : ""}> Send it on the 1st of each month (about 7:30 AM)</label>
+        <label><input type="checkbox" data-rmail="attachPdf"${s.attachPdf ? " checked" : ""}> Attach a PDF</label>
+      </div>
+      <div class="note" style="margin-top:10px">Include in the email and PDF:</div>
+      <div class="rp-checks">${s.list.map(([k, l]) => `<label><input type="checkbox" data-rmailsec="${k}"${s.sections[k] ? " checked" : ""}> ${esc(l)}</label>`).join("")}</div>
+      <div class="rp-row" style="margin-top:12px"><span class="note">Goes to ${s.to.map(esc).join(" and ")}. Changes save automatically.</span>
+        <button type="button" class="btn" id="rpMailTest">Send me a test</button></div>
+      ${rpMailMsg ? `<div class="note" style="margin-top:6px">${esc(rpMailMsg)}</div>` : ""}`}
+    </details>`;
+  }
+  document.addEventListener("change", e => {
+    const d = e.target && e.target.dataset; if (!d || !rpMail || rpMail === "loading") return;
+    if (d.rmail) rpMail[d.rmail] = e.target.checked;
+    else if (d.rmailsec) rpMail.sections[d.rmailsec] = e.target.checked;
+    else return;
+    rpMailMsg = "Saving…"; renderMain();
+    call("saveReportSettings", rpMail).then(s => { rpMail = s; rpMailMsg = "Saved."; renderMain(); }).catch(err => { rpMailMsg = "Couldn't save: " + err.message; renderMain(); });
+  });
+  document.addEventListener("click", e => {
+    if (!e.target.closest("#rpMailTest") || !rpMail || rpMail === "loading") return;
+    rpMailMsg = "Sending a test…"; renderMain();
+    call("sendTestReport", rpMail).then(r => { rpMailMsg = "Test sent to " + r.sent.join(", ") + ". Check your inbox."; renderMain(); }).catch(err => { rpMailMsg = "Couldn't send: " + err.message; renderMain(); });
+  });
 
   function render(){ renderRail(); renderMain(); }
 
@@ -1168,6 +1219,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const tr = e.target.closest("tr[data-id],[data-go]"); if (tr) { state.current = tr.dataset.id || tr.dataset.go; state.ws = "all"; state.kind = "all"; try{localStorage.setItem("hub.client", state.current)}catch{}; render(); return; }
     if (e.target.closest(".prow a")) return;
     const w = e.target.closest("[data-ws]"); if (w) { state.ws = w.dataset.ws; renderMain(); return; }
+    const rcs = e.target.closest(".rp-custom > summary"); if (rcs) { const dd = rcs.parentElement; if (dd.id === "rpMail") state.rpMailOpen = !dd.open; else state.rpCustOpen = !dd.open; }
     if (e.target.closest("#rpPrint")) { try { window.print(); } catch (err) {} return; }
     const rtb = e.target.closest("[data-rtype]"); if (rtb) { state.rp.type = rtb.dataset.rtype; renderMain(); return; }
     const tfb = e.target.closest("[data-tfilter]"); if (tfb) { state.tf = tfb.dataset.tfilter; renderMain(); return; }
@@ -1181,6 +1233,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const id = e.target && e.target.id;
     if (id === "rpPeriod") { state.rp.period = e.target.value; renderMain(); }
     else if (id === "rpClient") { state.rp[state.rp.type === "client" ? "cclient" : "client"] = e.target.value; renderMain(); }
+    else if (e.target.dataset && e.target.dataset.rsec) { rpOff[e.target.dataset.rsec] = !e.target.checked; try { localStorage.setItem("pulse.rpOff", JSON.stringify(rpOff)); } catch (err) {} renderMain(); }
     else if (id === "rpFrom" || id === "rpTo") { if (e.target.value) { state.rp[id === "rpFrom" ? "from" : "to"] = e.target.value; renderMain(); } }
   });
   $("#search").addEventListener("input", e => { state.q = e.target.value; renderRail(); });
