@@ -666,21 +666,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         <div class="stat"><div class="n">${items.length}</div><div class="l">items on record</div></div>
       </div>
 
-      ${scope.length ? (() => {
-        const linked = new Set(items.filter(i => i.scopeRef).map(i => i.ws));
-        const sStart = items.filter(i => i.scopeRef && i.date).map(i => i.date).sort()[0] || c.since || "";
-        const wsStart = w => w.start || items.filter(i => i.ws === w.id && i.date).map(i => i.date).sort()[0] || "";
-        const added = sStart ? wsList.filter(w => w.status !== "void" && !/proposal/i.test(w.name || "") && !linked.has(w.id) && wsStart(w) && wsStart(w) >= sStart).sort((x, y) => wsStart(x).localeCompare(wsStart(y))) : [];
-        const head = `${sDone} of ${scope.length} promised item${scope.length === 1 ? "" : "s"} delivered${sAct ? `, ${sAct} in progress` : ""}${added.length ? ` · ${added.length} project${added.length === 1 ? "" : "s"} added since` : ""}`;
-        return `<section class="section">
-        <div class="section-head"><h2>Initial engagement vs. today</h2><span class="note">What the first scope promised, and how the work has grown since</span></div>
-        <div class="scope">
-          <div class="shead">${head}</div>
-          ${(() => { const n = scope.length; const pos = i => n > 1 ? i / (n - 1) * 100 : 50; let ld = -1; scope.forEach((s, i) => { if (s.st === "done") ld = i; }); const lab = s => s.last ? esc(fmtDay(s.last)) + `<span class="sp-yr"> ’${s.last.slice(2, 4)}</span>` : esc(STATUS[s.st] || ""); return `<div class="spath" role="img" aria-label="${esc(head)}"><div class="sp-line"></div><div class="sp-fill" style="width:${ld > 0 ? pos(ld) : 0}%"></div>${scope.map((s, i) => { const p = pos(i); const al = n > 1 && i === 0 ? "left:0" : n > 1 && i === n - 1 ? "right:0" : `left:${p}%;transform:translateX(-50%)`; return `<span class="sp-st ${s.st}" style="left:${p}%" title="${esc(s.label)}">${i + 1}</span><span class="sp-lab" style="${al}">${lab(s)}</span>`; }).join("")}</div>`; })()}
-          <ol>${scope.map((s, i) => `<li><span class="sp-num ${s.st}" aria-hidden="true">${i + 1}</span><span>${esc(s.label)}</span><span class="when">${s.last ? esc(fmtDay(s.last)+" "+s.last.slice(0,4)) : esc(STATUS[s.st])}</span></li>`).join("")}</ol>
-          ${added.length ? `<div class="scope-added"><div class="eyebrow">Added beyond the original scope</div><ul>${added.map(w => `<li data-ws="${esc(w.id)}"><span>${esc(w.name)}</span><span class="when">${esc(fmtMonth(wsStart(w)))}</span></li>`).join("")}</ul></div>` : ""}
-        </div></section>`;
-      })() : ""}
+
 
       ${(() => {
         const showMoney = !state.clientView;
@@ -1475,7 +1461,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "9e5abbc670";
+  var BUILD = "337c7cd47b";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
