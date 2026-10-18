@@ -155,6 +155,19 @@ a.chip.mail:hover{border-color:var(--accent)}
 .pj-foot .pr{text-align:left}
 .pj-foot .pr .n{font-size:15px}
 .pj-open{font-size:13px;font-weight:600;color:var(--accent);margin-left:auto}
+.pj-items{font-size:13.5px}
+.pj-items>summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:var(--accent);display:inline-flex;gap:6px;align-items:center;padding:2px 0}
+.pj-items>summary::-webkit-details-marker{display:none}
+.pj-items>summary::before{content:"";width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.pj-items[open]>summary::before{transform:rotate(90deg)}
+.pj-items ul{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line);max-height:340px;overflow:auto}
+.pj-items li{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:4px 10px;padding:7px 4px;border-bottom:1px solid var(--line);align-items:baseline}
+.pj-items li:last-child{border-bottom:0}
+.pj-items li[data-edit]{cursor:pointer}.pj-items li[data-edit]:hover{background:var(--bg)}
+.pj-i-d{color:var(--muted);font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pj-i-k{color:var(--muted);font-size:12px;white-space:nowrap}
+.prow .pj-items{grid-column:1/-1}
+@media (max-width:640px){.pj-items li{grid-template-columns:minmax(0,1fr) auto}.pj-i-d{grid-column:1/-1}}
 .plist-h{font:600 13px/1.3 var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 8px}
 @media (max-width:640px){.pj-grid{grid-template-columns:minmax(0,1fr)}}
 .prow .pc{font:12px var(--f-mono);display:flex;gap:4px 12px;flex-wrap:wrap;align-items:center;grid-column:1}
@@ -660,8 +673,9 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
         const row = w => { const n = items.filter(i=>i.ws===w.id).length; const dates = (w.start?fmtMonth(w.start):"") + (w.end?" – "+fmtMonth(w.end):(w.start && w.status==="active"?" – now":"")); return `<div class="prow" role="button" tabindex="0" data-ws="${esc(w.id)}" aria-pressed="${state.ws===w.id}">
             <div class="pn">${esc(w.name)} <span class="pill ${esc(w.status||"active")}">${esc(w.status==="void" ? "Cancelled" : (STATUS[w.status]||w.status||""))}</span></div>
             ${rev(w.id)}
-            <div class="pm">${esc(dates||"Dates not set")} · ${n} item${n===1?"":"s"} on record${!state.clientView && w.fee ? " · "+esc(w.fee) : ""}</div>
+            <div class="pm">${esc(dates||"Dates not set")}${n ? "" : " · nothing on record"}${!state.clientView && w.fee ? " · "+esc(w.fee) : ""}</div>
             ${showMoney ? `<div class="pc">${ctLinks(w)}</div>` : ""}
+            ${pjItems(w)}
           </div>`; };
         const pjYmd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
         const pjToday = pjYmd(new Date());
@@ -705,11 +719,18 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
             <div class="pj-top"><div style="min-width:0"><div class="pj-name">${esc(w.name)}</div><div class="pj-when">${esc(when)}</div></div><span class="pill ${tag[0]}">${tag[1]}</span></div>
             ${track}
             <div class="pj-cnt">${cnt}</div>
+            ${pjItems(w)}
             ${nxt}
             ${(showMoney && (fees[w.id] || pend[w.id])) || showMoney || open ? `<div class="pj-foot">${showMoney && (fees[w.id] || pend[w.id]) ? rev(w.id) : ""}${showMoney ? `<div class="pc">${ctLinks(w)}</div>` : ""}${open}</div>` : ""}
           </div>`;
         };
         const liveP = projs.filter(w => w.status === "active" || w.status === "planned"), pastP = projs.filter(w => !(w.status === "active" || w.status === "planned"));
+        const pjItems = w => {
+          const li = items.filter(i => i.ws === w.id).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (a.title || "").localeCompare(b.title || ""));
+          if (!li.length) return "";
+          const can = state.canEdit && !state.clientView;
+          return `<details class="pj-items" data-pjid="${esc(w.id)}"${state.pjOpen && state.pjOpen[w.id] ? " open" : ""}><summary>${li.length} item${li.length === 1 ? "" : "s"} on record</summary><ul>${li.map(i => `<li${can ? ` data-edit="${esc(i._id)}" title="Edit"` : ""}><span class="pj-i-d">${i.date ? esc(fmtDay(i.date) + " " + i.date.slice(0, 4)) : "No date"}</span><span class="pj-i-t">${esc(i.title || "Untitled")}${i.status && i.status !== "done" ? ` <span class="pill ${esc(i.status)}">${esc(STATUS[i.status] || i.status)}</span>` : ""}</span><span class="pj-i-k">${esc(KIND[i.kind] || i.kind || "")}</span></li>`).join("")}</ul></details>`;
+        };
         const extra = (showMoney && fees.__none ? `<div class="prow tot muted"><div class="pn">Other fees not tied to a project</div><div class="pr"><div class="n">${money0(fees.__none)}</div><div class="l">${cnt.__none} invoice${cnt.__none===1?"":"s"}</div></div></div>` : "")
           + (showMoney && travel ? `<div class="prow tot muted"><div class="pn">Travel &amp; expenses (pass-through)</div><div class="pr"><div class="n">${money0(travel)}</div><div class="l">${b.inv.filter(i=>i.kind==="travel").length} invoices</div></div></div>` : "")
           + (showMoney && b.inv.length ? `<div class="prow tot"><div class="pn">Total billed</div><div class="pr"><div class="n">${money0(feeTot + travel)}</div><div class="l">${money0(feeTot)} fees</div></div></div>` : "");
@@ -1373,6 +1394,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 
   document.addEventListener("click", e => {
     if (e.target.closest("a.qb, .pc a, a.pj-open")) return;
+    if (e.target.closest(".pj-items")) { const pe = e.target.closest(".pj-items li[data-edit]"); if (pe) openItem(state.items.find(i => i._id === pe.dataset.edit)); return; }
     const mm = e.target.closest("#mobileMenu"); if (mm) { const open = document.querySelector(".rail").classList.toggle("menu-open"); mm.setAttribute("aria-expanded", String(open)); const rm = document.getElementById("railMenu"); if (open && rm) rm.style.top = (mm.offsetTop + mm.offsetHeight + 6) + "px"; return; }
     if (e.target.closest("#menuScrim")) { document.querySelector(".rail").classList.remove("menu-open"); const mb0 = document.getElementById("mobileMenu"); if (mb0) mb0.setAttribute("aria-expanded", "false"); return; }
     const cb = e.target.closest("#clientList button, #navList button");
@@ -1389,6 +1411,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const ed = e.target.closest("[data-edit]"); if (ed) { openItem(state.items.find(i => i._id === ed.dataset.edit)); return; }
     if (e.target.closest("#addItem")) openItem(null);
   });
+  document.addEventListener("toggle", e => { const d = e.target; if (d && d.classList && d.classList.contains("pj-items")) { state.pjOpen = state.pjOpen || {}; state.pjOpen[d.dataset.pjid] = d.open; } }, true);
   $("#mobilePick").addEventListener("change", e => { state.current = e.target.value; state.ws="all"; state.kind="all"; try{localStorage.setItem("hub.client", state.current)}catch{}; render(); });
   document.addEventListener("keydown", e => { if ((e.key==="Enter"||e.key===" ") && e.target.matches?.(".prow[data-go]")) { e.preventDefault(); e.target.click(); } });
   document.addEventListener("change", e => {
@@ -1428,7 +1451,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "2df06b1b97";
+  var BUILD = "1c5f6b0548";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
