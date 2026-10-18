@@ -190,6 +190,9 @@ a.chip.mail:hover{border-color:var(--accent)}
 .pj-i-k{color:var(--muted);font-size:12px;white-space:nowrap}
 .prow .pj-items{grid-column:1/-1}
 @media (max-width:640px){.pj-items li{grid-template-columns:minmax(0,1fr) auto}.pj-i-d{grid-column:1/-1}}
+.pj-prop{border-style:dashed}
+.pj-fee{font-weight:600;font-size:14px}
+.pj-sum{font-size:13.5px;color:var(--muted);line-height:1.4}
 .plist-h{font:600 13px/1.3 var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 8px}
 @media (max-width:640px){.pj-grid{grid-template-columns:minmax(0,1fr)}}
 .prow .pc{font:12px var(--f-mono);display:flex;gap:4px 12px;flex-wrap:wrap;align-items:center;grid-column:1}
@@ -734,7 +737,18 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
             ${(showMoney && (fees[w.id] || pend[w.id])) || showMoney || open ? `<div class="pj-foot">${showMoney && (fees[w.id] || pend[w.id]) ? rev(w.id) : ""}${showMoney ? `<div class="pc">${ctLinks(w)}</div>` : ""}${open}</div>` : ""}
           </div>`;
         };
-        const liveP = projs.filter(w => w.status === "active" || w.status === "planned"), pastP = projs.filter(w => !(w.status === "active" || w.status === "planned"));
+        const isBD = w => /proposals?\s*(&|and)\s*agreements/i.test(w.name || "");
+        const signedW = w => state.items.some(i => i.client === c.id && i.ws === w.id && i.kind === "contract" && i.contract && i.contract.state === "executed");
+        const isProp = w => w.status === "planned" && !signedW(w) && !b.inv.some(i => i.ws === w.id);
+        const projs2 = projs.filter(w => !isBD(w));
+        const liveP = projs2.filter(w => (w.status === "active" || w.status === "planned") && !isProp(w)), pastP = projs2.filter(w => !(w.status === "active" || w.status === "planned"));
+        const yr = d => d ? fmtDay(d) + " " + d.slice(0, 4) : "";
+        const openProps = state.clientView ? [] : projs2.filter(isProp).map(w => { const pi = state.items.filter(i => i.client === c.id && i.ws === w.id && i.kind === "proposal" && i.date).sort((x, y) => y.date.localeCompare(x.date))[0]; return { ws: w.id, name: w.name, when: pi ? "Proposed " + yr(pi.date) : (w.start ? "Planned for " + fmtMonth(w.start) : "No date set"), tag: "Awaiting decision", tone: "active", fee: w.fee || "", summary: w.summary || "" }; });
+        const lostProps = state.clientView ? [] : state.items.filter(i => i.client === c.id && i.kind === "proposal" && i.status === "void").sort((x, y) => (y.date || "").localeCompare(x.date || "")).map(i => { const w = wsList.find(x => x.id === i.ws); return { edit: state.canEdit ? i._id : "", name: i.title || "Proposal", when: "Proposed " + yr(i.date) + (w && !isBD(w) ? " · " + w.name : ""), tag: "Not converted", tone: "planned", fee: "", summary: i.note || "" }; });
+        const propCard = o => `<div class="pj pj-prop"${o.ws ? ` role="button" tabindex="0" data-ws="${esc(o.ws)}"` : ""}${o.edit ? ` data-edit="${esc(o.edit)}" title="Edit"` : ""}>
+            <div class="pj-top"><div style="min-width:0"><div class="pj-name">${esc(o.name)}</div><div class="pj-when">${esc(o.when)}</div></div><span class="pill ${o.tone}">${o.tag}</span></div>
+            ${o.fee ? `<div class="pj-fee">${esc(o.fee)}</div>` : ""}${o.summary ? `<div class="pj-sum">${esc(o.summary)}</div>` : ""}
+          </div>`;
         const pjItems = w => {
           const li = items.filter(i => i.ws === w.id).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (a.title || "").localeCompare(b.title || ""));
           if (!li.length) return "";
@@ -745,8 +759,8 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
           + (showMoney && travel ? `<div class="prow tot muted"><div class="pn">Travel &amp; expenses (pass-through)</div><div class="pr"><div class="n">${money0(travel)}</div><div class="l">${b.inv.filter(i=>i.kind==="travel").length} invoices</div></div></div>` : "")
           + (showMoney && b.inv.length ? `<div class="prow tot"><div class="pn">Total billed</div><div class="pr"><div class="n">${money0(feeTot + travel)}</div><div class="l">${money0(feeTot)} fees</div></div></div>` : "");
         return `<section class="section">
-        <div class="section-head"><h2>Everything we've done</h2><span class="note">${projs.length} project${projs.length===1?"":"s"}${showMoney?" · revenue is fees invoiced to each project":""} · ${state.ws==="all" ? "select one to filter the record" : `<button type="button" class="linkbtn" data-ws="all">show all work</button>`}</span></div>
-        ${liveP.length ? `<div class="pj-grid">${liveP.map(card).join("")}</div>` : ""}${pastP.length && liveP.length ? `<div class="plist-h">Completed</div>` : ""}${pastP.length || extra ? `<div class="plist">${pastP.map(row).join("")}${extra}</div>` : ""}${!projs.length ? `<div class="plist"><div class="prow tot muted"><div class="pn">No projects yet</div></div></div>` : ""}
+        <div class="section-head"><h2>Everything we've done</h2><span class="note">${liveP.length + pastP.length} project${liveP.length + pastP.length===1?"":"s"}${openProps.length + lostProps.length ? ` · ${openProps.length + lostProps.length} proposal${openProps.length + lostProps.length === 1 ? "" : "s"} not converted` : ""}${showMoney?" · revenue is fees invoiced to each project":""} · ${state.ws==="all" ? "select one to filter the record" : `<button type="button" class="linkbtn" data-ws="all">show all work</button>`}</span></div>
+        ${liveP.length ? `<div class="pj-grid">${liveP.map(card).join("")}</div>` : ""}${openProps.length || lostProps.length ? `<div class="plist-h">Proposals not converted</div><div class="pj-grid">${openProps.map(propCard).join("")}${lostProps.map(propCard).join("")}</div>` : ""}${pastP.length && liveP.length ? `<div class="plist-h">Completed</div>` : ""}${pastP.length || extra ? `<div class="plist">${pastP.map(row).join("")}${extra}</div>` : ""}${!projs2.length ? `<div class="plist"><div class="prow tot muted"><div class="pn">No projects yet</div></div></div>` : ""}
       </section>`;
       })()}
 
@@ -1461,7 +1475,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "337c7cd47b";
+  var BUILD = "6892f3ec87";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
