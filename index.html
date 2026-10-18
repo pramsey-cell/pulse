@@ -127,6 +127,36 @@ a.chip.mail:hover{border-color:var(--accent)}
 .prow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .prow .pn{font-weight:600;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .prow .pm{font:12px var(--f-mono);color:var(--muted)}
+.pj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;margin-bottom:14px}
+.pj{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;cursor:pointer;min-width:0}
+.pj:hover{border-color:var(--accent)}
+.pj[aria-pressed="true"]{box-shadow:inset 3px 0 0 var(--accent);border-color:var(--accent)}
+.pj:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.pj-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.pj-name{font:600 16px/1.25 var(--f-display)}
+.pj-when{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pj-track{position:relative;height:34px;margin:2px 7px 0}
+.pj-line{position:absolute;left:0;right:0;top:7px;height:4px;border-radius:2px;background:var(--planned-soft)}
+.pj-fill{position:absolute;left:0;top:7px;height:4px;border-radius:2px;background:linear-gradient(90deg,var(--ring-a),var(--ring-b))}
+.pj-dot{position:absolute;top:2px;width:14px;height:14px;margin-left:-7px;border-radius:50%;border:2px solid var(--accent);background:var(--surface)}
+.pj-dot.done{background:var(--accent)}
+.pj-dot.active{background:linear-gradient(90deg,var(--accent) 50%,var(--surface) 50%)}
+.pj-dot.late{border-color:var(--late);background:var(--late-soft)}
+.pj-lab{position:absolute;top:19px;font-size:11px;color:var(--muted);white-space:nowrap}
+.pj-now{position:absolute;top:-3px;height:20px;border-left:2px solid var(--active);margin-left:-1px}
+.pj-cnt{display:flex;flex-wrap:wrap;gap:6px}
+.pj-c{font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+.pj-next{background:var(--accent-soft);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.pj-next small{font-size:11.5px;color:var(--accent);font-weight:600}
+.pj-next span{font-size:14px}
+.pj-next.late{background:var(--late-soft)}.pj-next.late small{color:var(--late)}
+.pj-next.none{background:var(--bg);border:1px dashed var(--line)}.pj-next.none small{color:var(--muted)}.pj-next.none span{font-size:13px;color:var(--muted)}
+.pj-foot{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+.pj-foot .pr{text-align:left}
+.pj-foot .pr .n{font-size:15px}
+.pj-open{font-size:13px;font-weight:600;color:var(--accent);margin-left:auto}
+.plist-h{font:600 13px/1.3 var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 8px}
+@media (max-width:640px){.pj-grid{grid-template-columns:minmax(0,1fr)}}
 .prow .pc{font:12px var(--f-mono);display:flex;gap:4px 12px;flex-wrap:wrap;align-items:center;grid-column:1}
 .prow .pc a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px;display:inline-flex;gap:5px;align-items:center}
 .prow .pc a:hover{text-decoration-color:currentColor}
@@ -629,12 +659,59 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
             <div class="pm">${esc(dates||"Dates not set")} · ${n} item${n===1?"":"s"} on record${!state.clientView && w.fee ? " · "+esc(w.fee) : ""}</div>
             ${showMoney ? `<div class="pc">${ctLinks(w)}</div>` : ""}
           </div>`; };
+        const pjYmd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        const pjToday = pjYmd(new Date());
+        const pjDays = s => Math.round(new Date(s + "T12:00:00").getTime() / 86400000);
+        const pjShort = s => { const d = new Date(s + "T12:00:00"); return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); };
+        const card = w => {
+          const t = w.tracker && !w.tracker.error && w.tracker.counts ? w.tracker : null;
+          const its = items.filter(i => i.ws === w.id);
+          let ms, counts, next, start, end, late;
+          if (t) {
+            ms = (t.milestones || []).map(m => ({ date: m.date, label: m.label, st: m.status, late: m.late, tip: (m.titles || []).join("; ") }));
+            const k = t.counts;
+            counts = [[k.done, "done"], [k.active, "in progress"], [k.todo, "to do"], [k.blocked, "blocked"], [k.parked, "parked"]];
+            next = (t.next || [])[0] || null; start = t.start; end = t.end; late = k.late;
+          } else {
+            const mi = its.filter(i => i.kind === "milestone" && i.date).sort((a, b) => a.date.localeCompare(b.date));
+            ms = mi.map(i => ({ date: i.date, label: i.title, st: i.status === "done" ? "done" : i.status === "active" ? "active" : "planned", late: i.status !== "done" && i.date < pjToday, tip: i.title }));
+            counts = [[its.filter(i => i.status === "done").length, "done"], [its.filter(i => i.status === "active").length, "in progress"], [its.filter(i => i.status === "planned").length, "planned"]];
+            const nx = mi.find(i => i.status !== "done");
+            next = nx ? { title: nx.title, due: nx.date, owner: "" } : null;
+            start = w.start || (mi[0] && mi[0].date) || its.map(i => i.date).filter(Boolean).sort()[0] || "";
+            end = w.end || "";
+            late = ms.filter(x => x.late).length;
+          }
+          let openEnd = false;
+          if (start && !end) { const last = [pjToday, ...ms.map(x => x.date)].sort().pop(); end = pjYmd(new Date(new Date(last + "T12:00:00").getTime() + 21 * 86400000)); openEnd = true; }
+          const span = start && end ? pjDays(end) - pjDays(start) : 0;
+          const pos = d => span > 0 ? Math.max(0, Math.min(100, (pjDays(d) - pjDays(start)) / span * 100)) : 0;
+          const soon = next && next.due && pjDays(next.due) - pjDays(pjToday) <= 7;
+          const tag = w.status === "planned" ? ["planned", "Planned"] : late ? ["late", "Late"] : soon ? ["active", "Due soon"] : ["done", "On track"];
+          const dayN = span > 0 ? Math.max(0, Math.min(span, pjDays(pjToday) - pjDays(start))) : 0;
+          const when = !start ? "Dates not set" : t ? (pjToday < start ? `Starts ${pjShort(start)}` : `Day ${Math.max(1, dayN)} of ${span} · ${pjShort(start)} to ${pjShort(end)}`) : `${fmtMonth(start)}${openEnd ? " · no end date" : " to " + fmtMonth(end)}`;
+          let lastLab = -100;
+          const dots = ms.map(x => { const p = pos(x.date); const showLab = p - lastLab >= 14; if (showLab) lastLab = p; const al = p > 88 ? "right:0" : p < 8 ? "left:0" : `left:${p}%;transform:translateX(-50%)`; return `<span class="pj-dot ${x.late ? "late" : x.st}" style="left:${p}%" title="${esc(pjShort(x.date) + ": " + x.tip)}"></span>${showLab ? `<span class="pj-lab" style="${al}">${esc(pjShort(x.date))}</span>` : ""}`; }).join("");
+          const tp = start ? pos(pjToday) : 0;
+          const track = span > 0 ? `<div class="pj-track" aria-hidden="true"><div class="pj-line"></div><div class="pj-fill" style="width:${tp}%"></div>${dots}${pjToday >= start && pjToday <= end ? `<span class="pj-now" style="left:${tp}%"></span>` : ""}</div>` : "";
+          const cnt = counts.filter(([n]) => n > 0).map(([n, l]) => `<span class="pj-c">${n} ${l}</span>`).join("") || `<span class="pj-c">Nothing logged yet</span>`;
+          const nxt = next ? `<div class="pj-next${next.late || (next.due && next.due < pjToday) ? " late" : ""}"><small>${next.due && next.due < pjToday ? "Overdue" : "Next up"}${next.due ? " · due " + esc(pjShort(next.due)) : ""}${next.owner ? " · " + esc(next.owner) : ""}</small><span>${esc(next.title)}</span></div>` : (!t && !ms.length && !state.clientView ? `<div class="pj-next none"><small>No milestones yet</small><span>Add work with the type Milestone and a date to plot it here.</span></div>` : "");
+          const open = t && !state.clientView ? `<a class="pj-open" href="https:/` + `/docs.google.com/spreadsheets/d/${esc(t.id)}/edit" target="_blank" rel="noopener">Open tracker</a>` : "";
+          return `<div class="pj" role="button" tabindex="0" data-ws="${esc(w.id)}" aria-pressed="${state.ws === w.id}">
+            <div class="pj-top"><div style="min-width:0"><div class="pj-name">${esc(w.name)}</div><div class="pj-when">${esc(when)}</div></div><span class="pill ${tag[0]}">${tag[1]}</span></div>
+            ${track}
+            <div class="pj-cnt">${cnt}</div>
+            ${nxt}
+            ${(showMoney && (fees[w.id] || pend[w.id])) || showMoney || open ? `<div class="pj-foot">${showMoney && (fees[w.id] || pend[w.id]) ? rev(w.id) : ""}${showMoney ? `<div class="pc">${ctLinks(w)}</div>` : ""}${open}</div>` : ""}
+          </div>`;
+        };
+        const liveP = projs.filter(w => w.status === "active" || w.status === "planned"), pastP = projs.filter(w => !(w.status === "active" || w.status === "planned"));
         const extra = (showMoney && fees.__none ? `<div class="prow tot muted"><div class="pn">Other fees not tied to a project</div><div class="pr"><div class="n">${money0(fees.__none)}</div><div class="l">${cnt.__none} invoice${cnt.__none===1?"":"s"}</div></div></div>` : "")
           + (showMoney && travel ? `<div class="prow tot muted"><div class="pn">Travel &amp; expenses (pass-through)</div><div class="pr"><div class="n">${money0(travel)}</div><div class="l">${b.inv.filter(i=>i.kind==="travel").length} invoices</div></div></div>` : "")
           + (showMoney && b.inv.length ? `<div class="prow tot"><div class="pn">Total billed</div><div class="pr"><div class="n">${money0(feeTot + travel)}</div><div class="l">${money0(feeTot)} fees</div></div></div>` : "");
         return `<section class="section">
         <div class="section-head"><h2>Everything we've done</h2><span class="note">${projs.length} project${projs.length===1?"":"s"}${showMoney?" · revenue is fees invoiced to each project":""} · ${state.ws==="all" ? "select one to filter the record" : `<button type="button" class="linkbtn" data-ws="all">show all work</button>`}</span></div>
-        <div class="plist">${projs.map(row).join("") || `<div class="prow tot muted"><div class="pn">No projects yet</div></div>`}${extra}</div>
+        ${liveP.length ? `<div class="pj-grid">${liveP.map(card).join("")}</div>` : ""}${pastP.length && liveP.length ? `<div class="plist-h">Completed</div>` : ""}${pastP.length || extra ? `<div class="plist">${pastP.map(row).join("")}${extra}</div>` : ""}${!projs.length ? `<div class="plist"><div class="prow tot muted"><div class="pn">No projects yet</div></div></div>` : ""}
       </section>`;
       })()}
 
@@ -1291,7 +1368,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   }
 
   document.addEventListener("click", e => {
-    if (e.target.closest("a.qb, .pc a")) return;
+    if (e.target.closest("a.qb, .pc a, a.pj-open")) return;
     const mm = e.target.closest("#mobileMenu"); if (mm) { const open = document.querySelector(".rail").classList.toggle("menu-open"); mm.setAttribute("aria-expanded", String(open)); return; }
     const cb = e.target.closest("#clientList button, #navList button");
     if (cb) { document.querySelector(".rail").classList.remove("menu-open"); const mb = document.getElementById("mobileMenu"); if (mb) mb.setAttribute("aria-expanded", "false"); }
@@ -1346,7 +1423,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 </script>
 <script>
 (function () {
-  var BUILD = "3b3ab2bf72";
+  var BUILD = "c68e150311";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
