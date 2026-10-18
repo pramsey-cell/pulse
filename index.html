@@ -25,7 +25,7 @@
   --bg:#f3f7f8; --surface:#ffffff; --ink:#2b2730; --muted:#67626e; --line:#dbe5e8;
   --accent:#0077a6; --accent-soft:#e0f4f8;
   --ring-a:#00b8d1; --ring-b:#00a9da; --mark-bg:#ffffff;
-  --done:#1d7a4f; --done-soft:#e3f2ea; --active:#a65f00; --active-soft:#fbefdc; --planned:#67626e; --planned-soft:#ebeff1; --late:#b42318; --late-soft:#fdecea;
+  --done:#007f91; --done-soft:#dff5f8; --active:#1d7a4f; --active-soft:#e3f2ea; --warn:#a65f00; --warn-soft:#fbefdc; --up:#1d7a4f; --planned:#67626e; --planned-soft:#ebeff1; --late:#b42318; --late-soft:#fdecea;
   --f-display:"Jost", "Futura", "Century Gothic", system-ui, sans-serif;
   --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
   --f-mono:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
@@ -34,12 +34,12 @@
   --bg:#0e1417; --surface:#152025; --ink:#e8eef0; --muted:#9caab0; --line:#243238;
   --accent:#4fcbe6; --accent-soft:#12303a;
   --ring-a:#22c6dd; --ring-b:#1fb4e4; --mark-bg:#f3f7f8;
-  --done:#5fcf96; --done-soft:#15301f; --active:#f0b25a; --active-soft:#36280f; --planned:#9caab0; --planned-soft:#1d2a30; --late:#ff8a80; --late-soft:#3a1714; color-scheme:dark}}
+  --done:#3fd0e4; --done-soft:#0f2f35; --active:#5fcf96; --active-soft:#15301f; --warn:#f0b25a; --warn-soft:#36280f; --up:#5fcf96; --planned:#9caab0; --planned-soft:#1d2a30; --late:#ff8a80; --late-soft:#3a1714; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0e1417; --surface:#152025; --ink:#e8eef0; --muted:#9caab0; --line:#243238;
   --accent:#4fcbe6; --accent-soft:#12303a;
   --ring-a:#22c6dd; --ring-b:#1fb4e4; --mark-bg:#f3f7f8;
-  --done:#5fcf96; --done-soft:#15301f; --active:#f0b25a; --active-soft:#36280f; --planned:#9caab0; --planned-soft:#1d2a30; --late:#ff8a80; --late-soft:#3a1714; color-scheme:dark}
+  --done:#3fd0e4; --done-soft:#0f2f35; --active:#5fcf96; --active-soft:#15301f; --warn:#f0b25a; --warn-soft:#36280f; --up:#5fcf96; --planned:#9caab0; --planned-soft:#1d2a30; --late:#ff8a80; --late-soft:#3a1714; color-scheme:dark}
 html,body{height:100%}body{margin:0;-webkit-text-size-adjust:100%}[hidden]{display:none!important}img{max-width:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);font-variant-numeric:tabular-nums}
 *{box-sizing:border-box}
@@ -165,7 +165,7 @@ a.chip.mail:hover{border-color:var(--accent)}
 .pj-dot.active{background:linear-gradient(90deg,var(--accent) 50%,var(--surface) 50%)}
 .pj-dot.late{border-color:var(--late);background:var(--late-soft)}
 .pj-lab{position:absolute;top:19px;font-size:11px;color:var(--muted);white-space:nowrap}
-.pj-now{position:absolute;top:-3px;height:20px;border-left:2px solid var(--active);margin-left:-1px}
+.pj-now{position:absolute;top:-3px;height:20px;border-left:2px solid var(--warn);margin-left:-1px}
 .pj-cnt{display:flex;flex-wrap:wrap;gap:6px}
 .pj-c{font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
 .pj-next{background:var(--accent-soft);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
@@ -206,7 +206,7 @@ a.chip.mail:hover{border-color:var(--accent)}
 a.qb{color:var(--accent);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 40%,transparent);text-underline-offset:2px}
 a.qb:hover{text-decoration-color:currentColor}
 .prow .pr .of{font-weight:400;color:var(--muted)}
-.prow .pr .pendl{color:var(--active);font-weight:600}
+.prow .pr .pendl{color:var(--warn);font-weight:600}
 .prow.tot{cursor:default;background:var(--bg-soft,transparent)}
 .prow.tot .pn{font-weight:600}
 .prow.muted .pn{color:var(--muted);font-weight:500}
@@ -291,7 +291,7 @@ a.qb:hover{text-decoration-color:currentColor}
 .kind{font:600 12.5px var(--f-display);color:var(--muted)}
 .row .edit{border:0;background:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0}
 .empty{border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
-.internal-tag{font:600 12px var(--f-display);color:var(--active)}
+.internal-tag{font:600 12px var(--f-display);color:var(--warn)}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0;width:min(520px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(10,14,25,.45)}
 .form{padding:20px;display:flex;flex-direction:column;gap:12px}
@@ -301,7 +301,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 .form .actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .form .check{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
 .note{font-size:13px;color:var(--muted)}
-.banner{background:var(--active-soft);color:var(--active);padding:8px 12px;border-radius:6px;font-size:13px}
+.banner{background:var(--warn-soft);color:var(--warn);padding:8px 12px;border-radius:6px;font-size:13px}
 .mobile-pick{display:none}
 @media (max-width:760px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -331,7 +331,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 .report{display:flex;flex-direction:column;gap:26px;max-width:1100px}
 .rp-title{font:600 22px/1.2 var(--f-display);margin:0}
 .rp-sub{color:var(--muted);font-size:14px;margin-top:4px}
-.chg.up{color:var(--done);font-weight:600}
+.chg.up{color:var(--up);font-weight:600}
 .chg.down{color:var(--late);font-weight:600}
 .stats.five{grid-template-columns:repeat(5,minmax(0,1fr))}
 .rp-trend .yr{grid-template-columns:76px minmax(0,1fr) 110px}
@@ -391,6 +391,16 @@ input[role="switch"]:checked{background:var(--ring-a)}
 input[role="switch"]:checked::before{transform:translateX(18px)}
 input[role="switch"]:disabled{opacity:.5;cursor:default}
 @media (max-width:760px){.rail .rail-foot #clientViewBtn .tg-text::after{content:"Client"}}
+.rail-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.cleg{display:inline-flex;gap:10px;font:500 11.5px/1.2 var(--f-body);color:var(--muted)}
+.cleg>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.cnts{display:inline-flex;gap:4px;flex:none;align-self:center}
+.cb{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;font:600 12px/1 var(--f-body);font-variant-numeric:tabular-nums;box-sizing:border-box}
+.cb.prog{background:#1d8a52;color:#fff}
+.cb.done{background:var(--ring-a);color:#05323a}
+.cb.zero{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.cleg i.cb{min-width:10px;width:10px;height:10px;padding:0}
+@media (max-width:760px){.rail.menu-open .rail-head{display:flex}}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -485,7 +495,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     <div class="brand pulse"><span class="mark"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABcCAMAAACm/kDcAAAAkFBMVEUAAAAFsdoUxN729PRnZmdVTltZy&#43;Vx4fCc1ulrZW9fWGQA/f0LsP0xueUzx&#43;BKyuWfm6AUtrZWsfEAAP8AfP9LvOJWp6yJeooLa7VrGGt/f/9HveWY2OsXF2oAeX8wud9uapg6x97/AP9HzuSNiZD19a46S1x9eIGusuD//38A/39KPEc9OUYAfwAUj7V/AAB5z1PsAAAAMHRSTlMA&#43;vEICOleHSNfnwEFo6STGgMVAQJmAygDAwKTVwMCcBhzActGBP1GDQIC&#43;f0C/QJZj8UmAAAHtUlEQVR42qVah3LjOAylDZqURRVLstOcusm2q///dweQYhGL7OQ4s&#43;uMC8oD&#43;EACYmxtKXlHL5UQ3Xa73ZiFf/VCAn0wSPZ/lmy08H47C9/qP7Z2vQlS0sBXxd8MjIGzHP/bdr0QQpp/PX2w7cQBv/hQlME5L330gOKr3kg3oqrIVAD5hlp6RGnMe7HiGyA4VWeB6WbEUeYo5TiOsrLaEMB3UnHICEPjDwUPxlC8qLTs6vHUthu/2nZWizr6Ki&#43;&#43;3u12efOhd&#43;JJCMiXULZf3YlE3wnxWMEUy9&#43;j&#43;P1tJriMiYV4KTYrq9XfeayYWson8/eQhQfNN/ne0&#43;fC297TavtEh0ZoSsyv8edPSQwGJq359DOpxW/PiLe3BipxamMVkwzkA5p/qxWl8kVgftVi/ttgsmlqaE3GVpALVxCoJpSP5vMUINU4&#43;YJ2GYnXCdIMD2rBIM1AOkToh2RHOcOv0X/NMM&#43;RdR6eqt1uTmjE83hUWZrSRBK4gTZJkn&#43;L8rPwYB7M8juUKzebF3xpblaocDxqGF3SApOc8d3uIwcPpjPrrfwjQ3jQiwGu4EMRwkTyb/PftfHV9rfk8FVEKQcG3gmJ8g8X5U/4ixEBuJJ2h9CJP1F&#43;ln8k5r/JH3hC&#43;3&#43;5pLtiIbfIWf5fuxPLRg0UzPIR&#43;bYFNn6qdjSs0r/e/dig73dZN&#43;cAI/QvLWM3n6xOo9bw408T6YeMBXMAesZO7WHgn65/5MMPZnCCY5wdcKxsANiIvPLw&#43;QILT8gP/8wEmwTQASRR/pjBZ6W2OgKqd8ym0iky0WbQtkOATuxXpjitV1jG7pGfa3ayGiq2OM&#43;o3zNF4PuCyUzp5vvXVQ2c5MOz23Ht7wU3WgcEqx7lMTWfah/xL5TlH2gDc1V54hvDCMwOgHqsYgcMufMDIcCL8kHLR6FuS4OakggIpoCprG24anyBUgBqImh9zPNxlh6hOYUqpQq&#43;UxbtUUbJBfrsfi643gVl5RutmEJDbOI38v0709X1Z0kBfVT7/da6KDQRi0olc74bcuSs5IF20iUAbiTvwlxmwIY4&#43;e2rk7&#43;igJLg1n&#43;ivlsFbsNWNsRDYhufY7eqYO&#43;&#43;NAOyiQhDWAUyZpeDT82SAr3DwveBub1gIZlzCOtYyi6HSwooCyA6ObT&#43;HKO/YWmoyQHEc9oKRtg8sox0NqDbEExLBcAXtvHsRjtk/PrDbYXWeOBC0CTgBslBCiDN4oPfAW5N4IOgvIKIhIDTb58WWGcyKKM12Gujlul2AcTZF4BLW7rOZVAmLj5RDaXaw1BERIdF9tF23YcO4fpXv8cz9V8s2MIoaJfbLI5pLks5ywRAs0W12Gpbx3RLfonoP0HDADTljtBeAaFiqPQlUrCPkzIOJ53S89wxsYNNI/bsFLyFCiAT0rqOHcgD5PmfFBzzCsiB16U8SCrmvnSKvkJBkvQQJwzxCC8UuLyCMAY8yb/UpUO5gOYVLLOojtynyhZvw&#43;IZJgzyMZ&#43;mmV1bL9/h6FBJQ5imXkELQ56n81lVl08Y&#43;Y1GXKQCwGGlNNAX6tWrwpIq3LHUK4jwSFitnEHGgyXZ2UOLpWvCY5/WLbgSIIa4L&#43;k6LjiQ44DAp1cEaPWy4AuOQaWyaaRsGfxIEFjEeB2gtGTORd8Qk2WxiZd4jV8AiDXKhuBlBqWLaybZe1&#43;IMWXQ64XboD&#43;2yMXBy&#43;4Ekvex3EZ7e/ikAK0CRDkSH7ziIOB3&#43;KIYPPkYpymcVuRTdHS0h1&#43;MeZFeLFdrsO7Xu93gERrtvkhORlG3x1In3K&#43;QqLsuxcd3mPNo04Eq3vD4fEm4BBBrficXEH8HlMkBflmg&#43;aUtkL9Chdfwu&#43;QSOJcHm78XAGKDi8BLIClwAa&#43;xGQkGGM2y/ELPJXeNxZvOoz3eVY9VetE3hqdlItd0yl7EEaTOJpIQ6U3cCL5nK1dxK8e1EkB9y7fTSMNNJsbxcT5PEqdNxBJJO6dn8izjPjoVA84ubgHfuMNrftSR48/gOsrj&#43;WZScSOImfvOt1V83O0PC7wq9sQr9oIAwuKMSOXsEkCNJ7lNNfFyU7AHdsZTsYpOFLcXIjwE8mWupQgIkmsLdh1zm1rfbf7&#43;FXQL1tqaJkOzhHDjMkkw5Fc/DdAe1LufKw6oIL4bUWrpDsHoADr0044RUcHHbv0gFLSWBTuWYfQavuvmOOWC7ujsaniC8kQvaI6LtZa0DbRu/4otzT4aGpTUu1LD20z0gvb&#43;uN7yVgsNei5jBhQF&#43;eqmWcxA2oqp9XJ3dCh11DXZahV3BdvNiOXszT9/v9hSx/R3GiozJNKDRtWMi3IHD3rODDIcEiFNVtf0uK0GgknPZ1o7h31uzJrsMC0ac8nHSl2emSg7qNNOzHPAlpQEgzoUvhzUUUKIXl4IgRs1ds4JCEeNbWtmjcnc1IgX18kPh6WzCtmvD0tRvOxoqHzt8F0NbtyLKmgSCqKgozvRdpf9O82sPjUw0eP2jR2Ig55Ln5fYnE86wyqhjVCfez5BDX4mvjETfTtyHzGPRmkSCyQ9VEA&#43;Nuyziz/7hwbsYwPBcwOUSG/6wQS93RX7wqKdah578Eq0ou7dPV7R0SS4eWBfXOGDG1sPvlVk5sx3X35ww8x0NROB8I&#43;HIH1s3&#43;2jJ83l0P4HuNhR/4oFgqAAAAAASUVORK5CYII=" alt="VGCG"></span><span class="pulse-badge">Pulse</span></div>
     <button type="button" class="mobile-menu" id="mobileMenu" aria-expanded="false" aria-label="Open the menu"><span id="mobileMenuLabel">Menu</span><span class="chev" aria-hidden="true">&#9662;</span></button>
     <div class="rail-menu" id="railMenu"><ul class="clients nav" id="navList"></ul>
-    <div class="rail-head" id="railHead">Clients</div>
+    <div class="rail-head" id="railHead"><span>Clients</span><span class="cleg" aria-label="Work item status"><span><i class="cb prog"></i>In progress</span><span><i class="cb done"></i>Done</span></span></div>
     <input class="search" id="search" type="search" placeholder="Find a client" aria-label="Find a client">
     <select class="mobile-pick" id="mobilePick" aria-label="Choose a client"></select>
     <ul class="clients" id="clientList"></ul></div><div class="menu-scrim" id="menuScrim" aria-hidden="true"></div>
@@ -592,8 +602,8 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
   function renderRail() {
     const list = $("#clientList"), pick = $("#mobilePick");
     const q = state.q.toLowerCase();
-    const counts = {};
-    state.items.forEach(i => { if (i.status === "done") counts[i.client] = (counts[i.client]||0) + 1; });
+    const counts = {}, prog = {};
+    state.items.forEach(i => { if (i.status === "done") counts[i.client] = (counts[i.client]||0) + 1; else if (i.status === "active") prog[i.client] = (prog[i.client]||0) + 1; });
     const cyr = String(new Date().getFullYear());
     const billedTot = id => state.invoices.filter(i => i.client === id).reduce((s,i)=>s+i.amount,0);
     const isActive = c => /^active$/i.test(c.stage||"") || state.invoices.some(i => i.client === c.id && i.date.slice(0,4) === cyr);
@@ -605,7 +615,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
     const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? `<span class="count">${state.searches.length}</span>` : ""}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
-    const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="count">${counts[c.id]||0}</span></button></li>`;
+    const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
     const aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
     $("#navList").innerHTML = ov; list.innerHTML = (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
     pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
@@ -1486,7 +1496,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "4372ceae2f";
+  var BUILD = "5434a874dd";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
