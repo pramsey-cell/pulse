@@ -238,6 +238,39 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   .form .two{grid-template-columns:1fr}
 }
 .top{display:flex;flex-direction:column;gap:16px}
+.rp-controls{display:flex;flex-direction:column;gap:12px}
+.rp-row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.rp-row label{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.rp-row select,.rp-row input{font:inherit;font-weight:400;font-size:14px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);max-width:100%}
+.rp-row .btn{margin-left:auto}
+.report{display:flex;flex-direction:column;gap:26px;max-width:1100px}
+.rp-title{font:600 22px/1.2 var(--f-display);margin:0}
+.rp-sub{color:var(--muted);font-size:14px;margin-top:4px}
+.chg.up{color:var(--done);font-weight:600}
+.chg.down{color:var(--late);font-weight:600}
+.stats.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.rp-trend .yr{grid-template-columns:76px minmax(0,1fr) 110px}
+.rp-client{display:flex;gap:16px;align-items:center}
+.rp-client img{max-height:52px;max-width:150px;object-fit:contain;background:#fff;padding:4px 8px;border-radius:8px}
+.rp-client img.dark{background:#1e2a30}
+.rp-print-head{display:none;justify-content:space-between;gap:12px;font:600 12px/1.4 var(--f-display);color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:8px}
+@media (max-width:640px){.stats.five{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-row .btn{margin-left:0}.rp-row label{width:100%;justify-content:space-between}}
+@media print{
+  html:root,html:root[data-theme]{--bg:#fff !important;--surface:#fff !important;--ink:#111 !important;--muted:#555 !important;--line:#d6d6d6 !important;--accent-soft:#f2f5f6 !important}
+  @page{margin:14mm}
+  html,body{height:auto !important;overflow:visible !important;background:#fff !important;color:#111 !important}
+  .rail,.app-foot,.rp-controls,.gate,dialog,.main>.top{display:none !important}
+  .app{display:block !important;height:auto !important}
+  .main{display:block !important;height:auto !important;overflow:visible !important;padding:0 !important;max-width:none !important}
+  .col-full,.col-left,.col-right{overflow:visible !important;height:auto !important;padding:0 !important}
+  .rp-print-head{display:flex !important}
+  .report{max-width:none;gap:18px}
+  .section-head{break-after:avoid}
+  .tbl tr,.stat,.yr{break-inside:avoid}
+  .tbl-wrap{overflow:visible}
+  .report a{color:inherit;text-decoration:none}
+  .share,.share i,.pill,.stats,.tbl tr.tot td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px;align-items:start}
 @media (max-width:640px){.tgrid{grid-template-columns:minmax(0,1fr)}.th{flex-wrap:wrap}.th>div{flex-basis:calc(100% - 90px)}.tlogo{height:28px}.tlist li{grid-template-columns:20px minmax(0,1fr) 84px;gap:10px;padding:12px 14px}.tcard>summary{padding:14px}}
 .tv{font-size:13px;color:var(--accent);margin-top:6px;font-weight:600}
@@ -420,7 +453,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const state = { clients: [], items: [], invoices: [], overrides: [], searches: [], tf: "all", current: null, ws: "all", kind: "all", clientView: false, canEdit: false, q: "", editing: null };
+  const state = { clients: [], items: [], invoices: [], overrides: [], searches: [], tf: "all", rp: { type: "revenue", period: "ytd", client: "all", cclient: "", from: "", to: "" }, current: null, ws: "all", kind: "all", clientView: false, canEdit: false, q: "", editing: null };
   const KIND = { deliverable: "Deliverable", milestone: "Milestone", meeting: "Session", proposal: "Proposal", invoice: "Invoice", contract: "Contract" };
   const STATUS = { done: "Done", active: "In progress", planned: "Planned", void: "Not executed" };
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -442,7 +475,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     if (i.balance <= 0.005) return ["done","Paid"];
     const days = Math.floor((Date.now() - new Date((i.due||i.date)+"T12:00:00"))/86400000);
     if (i.balance < i.amount - 0.005) return ["active", days > 0 ? `Part paid · ${days}d late` : "Part paid"];
-    return days > 0 ? ["late", `${days} days late`] : ["active","Open"];
+    return days > 0 ? ["late", `${days} day${days === 1 ? "" : "s"} late`] : ["active","Open"];
   }
   try { const v = localStorage.getItem("hub.clientView"); state.clientView = v === "1"; } catch {}
   state.current = "__home";
@@ -474,12 +507,12 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const otherC = state.clients.filter(c => !isActive(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
     const sorted = [...activeC, ...otherC];
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
-    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? `<span class="count">${state.searches.length}</span>` : ""}</button></li><li class="rail-sep" aria-hidden="true"></li>`;
+    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? `<span class="count">${state.searches.length}</span>` : ""}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
     const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="count">${counts[c.id]||0}</span></button></li>`;
     const aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
     list.innerHTML = ov + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
-    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
+    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
     $("#clientViewBtn").setAttribute("aria-pressed", String(state.clientView));
   }
 
@@ -495,7 +528,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 
   function renderMain() {
     const main = $("#main");
-    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else renderOverview(); return; } }
+    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent" || state.current === "__reports") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else if (state.current === "__reports") renderReports(); else renderOverview(); return; } }
     const c = state.clients.find(x => x.id === state.current);
     if (!c) {
       main.innerHTML = state.clients.length
@@ -797,6 +830,187 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
       <section class="section col-full"><div class="tgrid">${list.length ? list.map(card).join("") : `<div class="empty">${all.length ? "No searches match this filter." : "Search campaigns will appear here once their trackers are loaded."}</div>`}</div></section>`;
   }
 
+  /* ---------- Reports ---------- */
+  const RP_TYPES = [["revenue","Revenue"],["receivables","Receivables"],["client","Client summary"],["talent","Talent"]];
+  const RP_PERIODS = [["ytd","This year to date"],["lastyear","Last year"],["qtd","This quarter to date"],["lastq","Last quarter"],["12m","Last 12 months"],["all","All time"],["custom","Custom range"]];
+  function rpYmd(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+  function rpRange() {
+    const r = state.rp, now = new Date(), y = now.getFullYear(), q = Math.floor(now.getMonth()/3), today = rpYmd(now);
+    const back = (d, yrs) => (+d.slice(0,4) - yrs) + d.slice(4);
+    const qStart = (yy, qq) => rpYmd(new Date(yy, qq*3, 1)), qEnd = (yy, qq) => rpYmd(new Date(yy, qq*3+3, 0));
+    switch (r.period) {
+      case "lastyear": return { from: (y-1)+"-01-01", to: (y-1)+"-12-31", label: String(y-1), pfrom: (y-2)+"-01-01", pto: (y-2)+"-12-31", plabel: String(y-2) };
+      case "qtd": return { from: qStart(y,q), to: today, label: `Q${q+1} ${y} to date`, pfrom: back(qStart(y,q),1), pto: back(today,1), plabel: `Q${q+1} ${y-1}` };
+      case "lastq": { const yy = q ? y : y-1, qq = q ? q-1 : 3; return { from: qStart(yy,qq), to: qEnd(yy,qq), label: `Q${qq+1} ${yy}`, pfrom: qStart(yy-1,qq), pto: qEnd(yy-1,qq), plabel: `Q${qq+1} ${yy-1}` }; }
+      case "12m": { const f = rpYmd(new Date(now.getTime() - 365*864e5)); return { from: f, to: today, label: "Last 12 months", pfrom: back(f,1), pto: back(today,1), plabel: "the 12 months before" }; }
+      case "all": return { from: "", to: "", label: "All time" };
+      case "custom": { const f = r.from || (y+"-01-01"), t = r.to || today; return { from: f, to: t, label: `${fmtDay(f)}, ${f.slice(0,4)} to ${fmtDay(t)}, ${t.slice(0,4)}` }; }
+      default: return { from: y+"-01-01", to: today, label: `${y} to date`, pfrom: (y-1)+"-01-01", pto: back(today,1), plabel: `same period ${y-1}` };
+    }
+  }
+  const rpIn = (d, a, b) => !!d && (!a || d >= a) && (!b || d <= b);
+  const rpName = id => { const c = state.clients.find(x => x.id === id); return c ? (c.short || c.name) : id; };
+  const rpPct = (a, b) => b > 0.005 ? Math.round((a - b) / b * 100) : null;
+  function rpBuckets(list, from, to) {
+    const dates = list.map(i => i.date).sort();
+    const a = from || dates[0], b = to || dates[dates.length-1];
+    if (!a || !b) return [];
+    const days = (new Date(b) - new Date(a)) / 864e5;
+    const unit = days > 1100 ? "year" : days > 400 ? "quarter" : "month";
+    const keyOf = d => unit === "year" ? d.slice(0,4) : unit === "quarter" ? d.slice(0,4) + " Q" + (Math.floor((+d.slice(5,7)-1)/3)+1) : d.slice(0,7);
+    const labelOf = k => unit === "month" ? fmtMonth(k + "-01") : k;
+    const keys = []; let cur = new Date(+a.slice(0,4), +a.slice(5,7)-1, 1); const end = new Date(+b.slice(0,4), +b.slice(5,7)-1, 1);
+    while (cur <= end) { const k = keyOf(rpYmd(cur)); if (!keys.includes(k)) keys.push(k); cur.setMonth(cur.getMonth()+1); }
+    const sums = {}; list.forEach(i => { const k = keyOf(i.date); sums[k] = (sums[k]||0) + i.amount; });
+    return { unit, rows: keys.map(k => ({ k, label: labelOf(k), v: sums[k] || 0 })) };
+  }
+  function rpTrend(list, from, to) {
+    const t = rpBuckets(list, from, to); if (!t.rows || !t.rows.length) return "";
+    const max = Math.max(1, ...t.rows.map(r => r.v));
+    return `<section class="section"><div class="section-head"><h2>Revenue by ${t.unit}</h2><span class="note">By invoice date</span></div>
+      <div class="years rp-trend">${t.rows.map(r => `<div class="yr"><span class="mono">${esc(r.label)}</span><span class="share"><i style="width:${r.v/max*100}%"></i></span><span class="num">${r.v ? money0(r.v) : "—"}</span></div>`).join("")}</div></section>`;
+  }
+  function rpInvTable(list, showClient) {
+    if (!list.length) return `<div class="empty">No invoices in this range.</div>`;
+    const tot = list.reduce((s,i)=>s+i.amount,0), bal = list.reduce((s,i)=>s+i.balance,0);
+    return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Invoice</th>${showClient?"<th>Client</th>":""}<th>For</th><th class="num">Amount</th><th class="num">Balance</th><th>Status</th></tr></thead><tbody>
+      ${list.map(i => { const st = invStatus(i); return `<tr><td class="mono">${esc(i.date)}</td><td>${i.link ? `<a class="qb" href="${esc(i.link)}" target="_blank" rel="noopener">${esc(i.num)}</a>` : esc(i.num)}</td>${showClient?`<td>${esc(rpName(i.client))}</td>`:""}<td>${esc(i.desc||"")}${i.kind==="travel"?` <span class="pill planned">Travel</span>`:""}</td><td class="num">${money(i.amount)}</td><td class="num">${i.balance>0.005?money(i.balance):"—"}</td><td><span class="pill ${st[0]}">${esc(st[1])}</span></td></tr>`; }).join("")}
+      <tr class="tot"><td colspan="${showClient?4:3}"><b>Total · ${list.length} invoice${list.length===1?"":"s"}</b></td><td class="num"><b>${money(tot)}</b></td><td class="num"><b>${bal>0.005?money(bal):"—"}</b></td><td></td></tr>
+      </tbody></table></div>`;
+  }
+  function rpRevenue(R, cl) {
+    const pick = (a, b) => state.invoices.filter(i => rpIn(i.date, a, b) && (cl === "all" || i.client === cl));
+    const inv = pick(R.from, R.to).sort((a,b) => b.date.localeCompare(a.date));
+    const prev = R.pfrom ? pick(R.pfrom, R.pto) : null;
+    const billed = inv.reduce((s,i)=>s+i.amount,0), fees = inv.filter(i=>i.kind!=="travel").reduce((s,i)=>s+i.amount,0), open = inv.reduce((s,i)=>s+i.balance,0);
+    const pb = prev ? prev.reduce((s,i)=>s+i.amount,0) : 0, pct = prev ? rpPct(billed, pb) : null;
+    const by = {}; inv.forEach(i => { const r = by[i.client] || (by[i.client] = { n:0, fees:0, travel:0 }); r.n++; r[i.kind==="travel"?"travel":"fees"] += i.amount; });
+    const rows = Object.entries(by).map(([id, r]) => ({ id, ...r, t: r.fees + r.travel })).sort((a,b) => b.t - a.t);
+    const max = Math.max(1, ...rows.map(r => r.t));
+    return `
+      <div class="stats">
+        <div class="stat"><div class="n">${money0(billed)}</div><div class="l">billed${prev ? ` · ${pct === null ? "no prior revenue" : `<span class="chg ${pct>=0?"up":"down"}">${pct>=0?"+":""}${pct}%</span> vs ${esc(R.plabel)} (${money0(pb)})`}` : ""}</div></div>
+        <div class="stat"><div class="n">${money0(fees)}</div><div class="l">fees · ${money0(billed-fees)} travel</div></div>
+        <div class="stat"><div class="n">${money0(billed-open)}</div><div class="l">paid · <span class="${open>0.005?"warn-t":""}">${money0(open)} open</span></div></div>
+        <div class="stat"><div class="n">${inv.length}</div><div class="l">invoices · ${rows.length} client${rows.length===1?"":"s"}</div></div>
+      </div>
+      ${rpTrend(inv, R.from, R.to)}
+      ${cl === "all" ? `<section class="section"><div class="section-head"><h2>By client</h2></div>
+        ${rows.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Fees</th><th class="num">Travel</th><th class="num">Total</th><th class="num">Share</th><th class="num">Invoices</th></tr></thead><tbody>
+        ${rows.map(r => `<tr data-id="${esc(r.id)}"><td><b>${esc(rpName(r.id))}</b><span class="share" style="margin-top:6px"><i style="width:${r.t/max*100}%"></i></span></td><td class="num">${money0(r.fees)}</td><td class="num">${r.travel?money0(r.travel):"—"}</td><td class="num"><b>${money0(r.t)}</b></td><td class="num">${billed?Math.round(r.t/billed*100):0}%</td><td class="num">${r.n}</td></tr>`).join("")}
+        </tbody></table></div>` : `<div class="empty">No revenue in this range.</div>`}</section>` : ""}
+      <section class="section"><div class="section-head"><h2>Invoices</h2><span class="note">Newest first</span></div>${rpInvTable(inv, cl === "all")}</section>`;
+  }
+  function rpReceivables(cl) {
+    const today = rpYmd(new Date());
+    const open = state.invoices.filter(i => i.balance > 0.005 && (cl === "all" || i.client === cl)).sort((a,b) => (a.due||a.date).localeCompare(b.due||b.date));
+    const up = upcomingPayments().filter(p => cl === "all" || p.client === cl);
+    const late = i => Math.floor((new Date(today+"T12:00:00") - new Date((i.due||i.date)+"T12:00:00"))/864e5);
+    const B = [["Not yet due", d => d <= 0], ["1–30 days late", d => d >= 1 && d <= 30], ["31–60 days", d => d > 30 && d <= 60], ["61–90 days", d => d > 60 && d <= 90], ["Over 90 days", d => d > 90]];
+    const ag = B.map(([l, f]) => ({ l, v: open.filter(i => f(late(i))).reduce((s,i)=>s+i.balance,0) }));
+    const openTot = open.reduce((s,i)=>s+i.balance,0), lateTot = open.filter(i => late(i) > 0).reduce((s,i)=>s+i.balance,0), upTot = up.reduce((s,p)=>s+p.amount,0);
+    return `
+      <div class="stats">
+        <div class="stat"><div class="n ${openTot>0.005?"warn":""}">${money0(openTot)}</div><div class="l">open on ${open.length} invoice${open.length===1?"":"s"}</div></div>
+        <div class="stat"><div class="n ${lateTot>0.005?"warn":""}">${money0(lateTot)}</div><div class="l">past due</div></div>
+        <div class="stat"><div class="n">${money0(upTot)}</div><div class="l">upcoming · ${up.length} contract balance${up.length===1?"":"s"} not yet invoiced</div></div>
+        <div class="stat"><div class="n">${money0(openTot + upTot)}</div><div class="l">total expected</div></div>
+      </div>
+      <section class="section"><div class="section-head"><h2>Aging</h2><span class="note">Open balances by days past due</span></div>
+        <div class="stats five">${ag.map(a => `<div class="stat"><div class="n ${a.v>0.005 && a.l!=="Not yet due"?"warn":""}">${a.v?money0(a.v):"—"}</div><div class="l">${esc(a.l)}</div></div>`).join("")}</div></section>
+      <section class="section"><div class="section-head"><h2>Open invoices</h2><span class="note">Oldest due first · balances as last synced from QuickBooks</span></div>${open.length ? rpInvTable(open, cl === "all") : `<div class="empty">Nothing is open. Every invoice is paid.</div>`}</section>
+      <section class="section"><div class="section-head"><h2>Upcoming contract balances</h2><span class="note">Second halves of 50/50 contracts, not yet invoiced</span></div>
+        ${up.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cl==="all"?"<th>Client</th>":""}<th>Contract</th><th>First half invoiced</th><th class="num">Remaining</th></tr></thead><tbody>
+        ${up.map(p => `<tr>${cl==="all"?`<td>${esc(rpName(p.client))}</td>`:""}<td>${esc(p.title)}${p.label?` · ${esc(p.label)}`:""}<div class="sub">${esc(p.code||"")}${p.note?` · ${esc(p.note)}`:""}</div></td><td class="mono">${esc(p.date||"")}${p.num?` · ${p.link?`<a class="qb" href="${esc(p.link)}" target="_blank" rel="noopener">Invoice ${esc(p.num)}</a>`:"Invoice "+esc(p.num)}`:""}</td><td class="num">${money(p.amount)}</td></tr>`).join("")}
+        <tr class="tot"><td colspan="${cl==="all"?3:2}"><b>Total upcoming</b></td><td class="num"><b>${money(upTot)}</b></td></tr></tbody></table></div>` : `<div class="empty">No contract balances waiting to be invoiced.</div>`}</section>`;
+  }
+  function rpClient(id) {
+    const c = state.clients.find(x => x.id === id);
+    if (!c) return `<div class="empty">Choose a client.</div>`;
+    const b = billingFor(id), up = upcomingPayments().filter(p => p.client === id), upTot = up.reduce((s,p)=>s+p.amount,0);
+    const inv = b.inv.slice().sort((x,y) => y.date.localeCompare(x.date));
+    const years = {}; inv.forEach(i => { const y = i.date.slice(0,4); years[y] = (years[y]||0) + i.amount; });
+    const ymax = Math.max(1, ...Object.values(years));
+    const items = state.items.filter(i => i.client === id && !i.internal);
+    const cts = items.filter(i => i.kind === "contract").sort((x,y) => (y.contract?.sent||y.date).localeCompare(x.contract?.sent||x.date));
+    const work = items.filter(i => i.kind !== "contract" && i.kind !== "invoice" && i.status === "done").sort((x,y) => y.date.localeCompare(x.date));
+    const ss = state.searches.filter(s => s.client === id);
+    const W = c.workstreams || [];
+    return `
+      <div class="rp-client">${c.logo ? `<img class="${c.logoDark?"dark":""}" src="${esc(c.logo)}" alt="">` : ""}<div><div class="rp-title">${esc(c.name)}</div>
+        <div class="rp-sub">${esc(c.stage||"")}${c.since?` · Client since ${esc(fmtMonth(c.since))}`:""}</div></div></div>
+      ${c.blurb ? `<p class="lede" style="max-width:none">${esc(c.blurb)}</p>` : ""}
+      ${(c.contacts||[]).length || c.billingEmail ? `<div class="contacts" style="margin-top:0">${(c.contacts||[]).map(p => `<span class="chip"><b>${esc(p.name)}</b> · ${esc(p.role||"")}${p.email?` · ${esc(p.email)}`:""}</span>`).join("")}${c.billingEmail && !(c.contacts||[]).some(p => p.email && c.billingEmail.toLowerCase().includes(p.email.toLowerCase())) ? `<span class="chip"><b>Billing</b> · ${esc(c.billingEmail)}</span>` : ""}</div>` : ""}
+      <div class="stats">
+        <div class="stat"><div class="n">${money0(b.billed)}</div><div class="l">billed${b.first?` since ${esc(fmtMonth(b.first))}`:""}</div></div>
+        <div class="stat"><div class="n">${money0(b.paid)}</div><div class="l">paid</div></div>
+        <div class="stat"><div class="n ${b.open>0.005?"warn":""}">${money0(b.open)}</div><div class="l">open</div></div>
+        <div class="stat"><div class="n">${money0(upTot)}</div><div class="l">upcoming</div></div>
+      </div>
+      ${Object.keys(years).length ? `<section class="section"><div class="section-head"><h2>Revenue by year</h2></div><div class="years">${Object.keys(years).sort().reverse().map(y => `<div class="yr"><span class="mono">${y}</span><span class="share"><i style="width:${years[y]/ymax*100}%"></i></span><span class="num">${money0(years[y])}</span></div>`).join("")}</div></section>` : ""}
+      ${W.length ? `<section class="section"><div class="section-head"><h2>Projects</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Project</th><th>Status</th><th>Dates</th><th class="num">Fee</th></tr></thead><tbody>
+        ${W.map(w => `<tr><td><b>${esc(w.name)}</b>${w.summary?`<div class="sub">${esc(w.summary)}</div>`:""}</td><td><span class="pill ${esc(w.status||"active")}">${esc(STATUS[w.status]||w.status||"")}</span></td><td class="mono">${w.start?esc(fmtMonth(w.start)):""}${w.end?" – "+esc(fmtMonth(w.end)):""}</td><td class="num">${esc(w.fee||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
+      ${cts.length ? `<section class="section"><div class="section-head"><h2>Contracts</h2></div>${contractsTable(cts, false)}</section>` : ""}
+      ${ss.length ? `<section class="section"><div class="section-head"><h2>Executive searches</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Position</th><th>Status</th><th>Dates</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
+        ${ss.map(s => `<tr><td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${s.opened?esc(fmtMonth(s.opened)):""}${s.closed?" – "+esc(fmtMonth(s.closed)):""}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
+      ${work.length ? `<section class="section"><div class="section-head"><h2>Work delivered</h2><span class="note">${work.length} item${work.length===1?"":"s"}, newest first</span></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>What</th><th>Type</th></tr></thead><tbody>
+        ${work.slice(0,40).map(i => `<tr><td class="mono">${esc(i.date)}</td><td>${esc(i.title)}${i.note?`<div class="sub">${esc(i.note)}</div>`:""}</td><td>${esc(KIND[i.kind]||"")}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
+      <section class="section"><div class="section-head"><h2>Invoices</h2></div>${rpInvTable(inv, false)}</section>`;
+  }
+  function rpTalent(R, cl) {
+    const ss = state.searches.filter(s => (cl === "all" || s.client === cl) && (R.period === "all" || (s.opened ? s.opened <= (R.to || "9999") : true) && (!s.closed || !R.from || s.closed >= R.from)));
+    const placed = ss.filter(s => s.placed && s.opened && s.closed);
+    const ttf = placed.map(s => Math.round((new Date(s.closed) - new Date(s.opened)) / 864e5));
+    const avg = ttf.length ? Math.round(ttf.reduce((a,b)=>a+b,0) / ttf.length) : null;
+    const apps = ss.reduce((t,s) => t + (+s.applicants||0), 0);
+    const by = {}; ss.forEach(s => { const r = by[s.client] || (by[s.client] = { n:0, act:0, pl:0, apps:0 }); r.n++; if (s.status==="Active") r.act++; if (s.placed) r.pl++; r.apps += (+s.applicants||0); });
+    const sorted = ss.slice().sort((a,b) => (a.status==="Active"?0:1)-(b.status==="Active"?0:1) || String(b.opened||"").localeCompare(String(a.opened||"")));
+    return `
+      <div class="stats">
+        <div class="stat"><div class="n">${ss.length}</div><div class="l">searches · ${ss.filter(s => s.status==="Active").length} active</div></div>
+        <div class="stat"><div class="n">${ss.filter(s => s.placed).length}</div><div class="l">placements</div></div>
+        <div class="stat"><div class="n">${avg === null ? "—" : avg + " days"}</div><div class="l">average time to fill${ttf.length?` (${ttf.length} search${ttf.length===1?"":"es"})`:""}</div></div>
+        <div class="stat"><div class="n">${apps}</div><div class="l">applicants screened</div></div>
+      </div>
+      ${cl === "all" && Object.keys(by).length ? `<section class="section"><div class="section-head"><h2>By client</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Client</th><th class="num">Searches</th><th class="num">Active</th><th class="num">Placed</th><th class="num">Applicants</th></tr></thead><tbody>
+        ${Object.entries(by).sort((a,b) => b[1].n - a[1].n).map(([id,r]) => `<tr><td><b>${esc(rpName(id))}</b></td><td class="num">${r.n}</td><td class="num">${r.act||"—"}</td><td class="num">${r.pl||"—"}</td><td class="num">${r.apps||"—"}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
+      <section class="section"><div class="section-head"><h2>Searches</h2><span class="note">Active first, then newest</span></div>
+        ${sorted.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cl==="all"?"<th>Client</th>":""}<th>Position</th><th>Status</th><th>Opened</th><th>Closed</th><th class="num">Days</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
+        ${sorted.map(s => { const d = s.opened ? Math.round(((s.closed ? new Date(s.closed) : new Date()) - new Date(s.opened)) / 864e5) : null; return `<tr>${cl==="all"?`<td>${esc(rpName(s.client))}</td>`:""}<td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${esc(s.opened||"")}</td><td class="mono">${esc(s.closed||"")}</td><td class="num">${d===null?"—":d}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="empty">No searches in this range.</div>`}</section>`;
+  }
+  function renderReports() {
+    const main = $("#main"), r = state.rp, t = r.type;
+    const clients = state.clients.slice().sort((a,b) => (a.short||a.name).localeCompare(b.short||b.name));
+    if (t === "client" && !clients.some(c => c.id === r.cclient)) {
+      const top = state.clients.map(c => ({ c, b: billingFor(c.id).billed })).sort((a,b) => b.b - a.b)[0];
+      r.cclient = top ? top.c.id : "";
+    }
+    const sel = t === "client" ? r.cclient : r.client;
+    const R = rpRange(), title = RP_TYPES.find(x => x[0] === t)[1];
+    const usesPeriod = t === "revenue" || t === "talent";
+    const scope = t === "client" ? "" : (r.client === "all" ? "All clients" : rpName(r.client));
+    const sub = [usesPeriod ? R.label : (t === "receivables" ? "As of " + fmtDay(rpYmd(new Date())) + ", " + new Date().getFullYear() : ""), scope].filter(Boolean).join(" · ");
+    const body = t === "revenue" ? rpRevenue(R, r.client) : t === "receivables" ? rpReceivables(r.client) : t === "client" ? rpClient(r.cclient) : rpTalent(R, r.client);
+    main.innerHTML = `<div class="top"><header class="head"><div style="min-width:0">
+        <h1>Reports</h1>
+        <p class="lede">Revenue, receivables, client and talent reports from the same numbers as the rest of Pulse. Print or save any report as a PDF.</p>
+      </div></header>
+      <div class="rp-controls">
+        <div class="filters">${RP_TYPES.map(([k,l]) => `<button type="button" data-rtype="${k}" aria-pressed="${t===k}">${l}</button>`).join("")}</div>
+        <div class="rp-row">
+          ${usesPeriod ? `<label>Period <select id="rpPeriod">${RP_PERIODS.map(([k,l]) => `<option value="${k}"${r.period===k?" selected":""}>${l}</option>`).join("")}</select></label>` : ""}
+          ${usesPeriod && r.period === "custom" ? `<label>From <input type="date" id="rpFrom" value="${esc(R.from)}"></label><label>To <input type="date" id="rpTo" value="${esc(R.to)}"></label>` : ""}
+          <label>Client <select id="rpClient">${t !== "client" ? `<option value="all">All clients</option>` : ""}${clients.map(c => `<option value="${esc(c.id)}"${sel===c.id?" selected":""}>${esc(c.short||c.name)}</option>`).join("")}</select></label>
+          <button type="button" class="btn" id="rpPrint">Print or save PDF</button>
+        </div>
+      </div></div>
+      <section class="section col-full"><div class="report">
+        <div class="rp-print-head"><span>Victoria Gillespie Consulting Group · Pulse</span><span>Prepared ${esc(fmtDay(rpYmd(new Date())))}, ${new Date().getFullYear()}</span></div>
+        <div><div class="rp-title">${esc(title)} report</div>${sub ? `<div class="rp-sub">${esc(sub)}</div>` : ""}</div>
+        ${body}
+      </div></section>`;
+  }
+
   function render(){ renderRail(); renderMain(); }
 
   function openItem(item) {
@@ -894,7 +1108,7 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
 
   function applyData_(d) {
     state.clients = d.clients; state.items = d.items; state.invoices = d.invoices || []; state.overrides = d.overrides || []; state.searches = d.searches || []; state.canEdit = d.canEdit;
-    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
+    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
     render();
   }
 
@@ -954,6 +1168,8 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
     const tr = e.target.closest("tr[data-id],[data-go]"); if (tr) { state.current = tr.dataset.id || tr.dataset.go; state.ws = "all"; state.kind = "all"; try{localStorage.setItem("hub.client", state.current)}catch{}; render(); return; }
     if (e.target.closest(".prow a")) return;
     const w = e.target.closest("[data-ws]"); if (w) { state.ws = w.dataset.ws; renderMain(); return; }
+    if (e.target.closest("#rpPrint")) { try { window.print(); } catch (err) {} return; }
+    const rtb = e.target.closest("[data-rtype]"); if (rtb) { state.rp.type = rtb.dataset.rtype; renderMain(); return; }
     const tfb = e.target.closest("[data-tfilter]"); if (tfb) { state.tf = tfb.dataset.tfilter; renderMain(); return; }
     const k = e.target.closest("[data-kind]"); if (k) { state.kind = k.dataset.kind; renderMain(); return; }
     const ed = e.target.closest("[data-edit]"); if (ed) { openItem(state.items.find(i => i._id === ed.dataset.edit)); return; }
@@ -961,6 +1177,12 @@ dialog::backdrop{background:rgba(10,14,25,.45)}
   });
   $("#mobilePick").addEventListener("change", e => { state.current = e.target.value; state.ws="all"; state.kind="all"; try{localStorage.setItem("hub.client", state.current)}catch{}; render(); });
   document.addEventListener("keydown", e => { if ((e.key==="Enter"||e.key===" ") && e.target.matches?.(".prow[data-go]")) { e.preventDefault(); e.target.click(); } });
+  document.addEventListener("change", e => {
+    const id = e.target && e.target.id;
+    if (id === "rpPeriod") { state.rp.period = e.target.value; renderMain(); }
+    else if (id === "rpClient") { state.rp[state.rp.type === "client" ? "cclient" : "client"] = e.target.value; renderMain(); }
+    else if (id === "rpFrom" || id === "rpTo") { if (e.target.value) { state.rp[id === "rpFrom" ? "from" : "to"] = e.target.value; renderMain(); } }
+  });
   $("#search").addEventListener("input", e => { state.q = e.target.value; renderRail(); });
   document.addEventListener("keydown", e => { if ((e.key==="Enter"||e.key===" ") && e.target.matches?.(".prow[data-ws]")) { e.preventDefault(); state.ws = e.target.dataset.ws; renderMain(); } });
   $("#clientViewBtn").addEventListener("click", () => { state.clientView = !state.clientView; try{localStorage.setItem("hub.clientView", state.clientView?"1":"0")}catch{}; render(); });
