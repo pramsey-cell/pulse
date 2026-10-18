@@ -401,6 +401,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cb.zero{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .cleg i.cb{min-width:10px;width:10px;height:10px;padding:0}
 @media (max-width:760px){.rail.menu-open .rail-head{display:flex}}
+.tu{font-size:12.5px;color:var(--muted);margin-top:2px}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -959,6 +960,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const cLogo = id => { const c = state.clients.find(x => x.id === id); return c && c.logo ? `<img class="tlogo${c.logoDark ? " dark" : ""}" src="${esc(c.logo)}" alt="">` : ""; };
     const all = [...state.searches].sort((a,b) => (a.status==="Active"?0:1) - (b.status==="Active"?0:1) || String(b.opened||"").localeCompare(String(a.opened||"")));
     const f = state.tf || "all";
+    const fmtStamp = v => { const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if (!m) return v; const mo = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m[2]-1]; const h = +m[4], h12 = h % 12 || 12; return `${mo} ${+m[3]}, ${m[1]} at ${h12}:${m[5]} ${h < 12 ? "AM" : "PM"} ET`; };
     if (state.showScores === undefined) { try { state.showScores = localStorage.getItem("pulse.scores") === "1"; } catch (e) { state.showScores = false; } }
     const showSc = !state.clientView && state.showScores === true;
     const list = all.filter(s => f === "all" || (f === "active" ? s.status === "Active" : s.status !== "Active"));
@@ -971,7 +973,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       const mx = +s.scoreMax || Math.max(100, ...top.map(t => +t.score||0));
       return `<details class="tcard"${s.status === "Active" ? " open" : ""}>
         <summary><div class="th">${cLogo(s.client)}<div><div class="tc"><button type="button" class="linkbtn" data-go="${esc(s.client)}">${esc(cName(s.client))}</button></div><h2>${esc(s.title)}</h2>
-          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
+          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${s.trackerUpdated ? `<div class="tu">Tracker last updated ${esc(fmtStamp(s.trackerUpdated))}</div>` : ""}${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
           <span class="pill ${s.status === "Active" ? "active" : s.status === "Placed" ? "done" : "planned"}">${esc(s.status||"")}</span></div></summary>
         ${top.length ? `<ol class="tlist">${top.map((t,i) => `<li><span class="rk">${esc(t.rank||i+1)}</span>
           <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}</div>
@@ -1498,7 +1500,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "9882e17768";
+  var BUILD = "db7cb236ed";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
