@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Pulse Resume Relay</title>
+<style>
+:root{--bg:#f3f7f8;--surface:#fff;--ink:#2b2730;--muted:#67626e;--line:#dbe5e8;--ok:#007f91;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1417;--surface:#152025;--ink:#e8eef0;--muted:#9caab0;--line:#243238;--ok:#3fd0e4;--bad:#ff8a80;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:22px;margin:0}
+p{margin:0;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+ol{margin:0;padding-left:20px;max-height:60vh;overflow:auto;font-size:14px}
+li.ok{color:var(--ok)} li.bad{color:var(--bad)}
+a{color:var(--ok)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Pulse resume relay</h1>
+  <p id="state">Waiting for the Indeed tab.</p>
+  <div class="card"><p>Keep this tab open while resumes are copied. It passes each resume from the Indeed tab to Pulse, which saves it in Google Drive and links it in the search's candidate tracker.</p></div>
+  <div class="card"><ol id="log"></ol></div>
+</main>
+<script>
+(function () {
+  var API = "https://script.google.com/macros/s/AKfycbwX7DVWeyj8A00pKqZJHMZSAUGt0at8B268LG4XGc2HwfmZyyi4bMXMBQ8NE5TW-icd/exec";
+  var ALLOWED = /^https:\/\/([a-z0-9-]+\.)*indeed\.com$/;
+  var token = ""; try { token = localStorage.getItem("pulse.token") || ""; } catch (e) {}
+  var state = document.getElementById("state"), log = document.getElementById("log");
+  if (!token) state.innerHTML = 'You are not signed in to Pulse in this browser. <a href="./">Open Pulse and sign in</a>, then reload this tab.';
+  function add(text, cls) { var li = document.createElement("li"); li.textContent = text; if (cls) li.className = cls; log.appendChild(li); li.scrollIntoView({ block: "nearest" }); }
+  var done = 0, failed = 0;
+  window.addEventListener("message", function (ev) {
+    if (!ALLOWED.test(ev.origin) || !ev.data || typeof ev.data !== "object") return;
+    var d = ev.data, reply = function (msg) { try { ev.source.postMessage(msg, ev.origin); } catch (e) {} };
+    if (d.type === "pulse-ping") { reply({ type: "pulse-pong", signedIn: !!token }); if (token) state.textContent = "Connected to the Indeed tab."; return; }
+    if (d.type !== "pulse-resume" || !token) return;
+    var p = d.payload || {};
+    fetch(API, { method: "POST", body: JSON.stringify({ fn: "saveResume", args: [p], token: token }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) { done++; add(p.name + ": " + (j.result.existed ? "already in Drive" : "saved") + (j.result.row ? ", linked in tracker row " + j.result.row : ", not found in tracker"), "ok"); reply({ type: "pulse-resume-result", id: d.id, ok: true, result: j.result }); }
+        else { failed++; add(p.name + ": " + ((j && j.error) || "failed"), "bad"); reply({ type: "pulse-resume-result", id: d.id, ok: false, error: (j && j.error) || "failed" }); }
+        state.textContent = done + " saved, " + failed + " failed.";
+      })
+      .catch(function (e) { failed++; add(p.name + ": " + e.message, "bad"); reply({ type: "pulse-resume-result", id: d.id, ok: false, error: e.message }); });
+  });
+})();
+</script>
+</body>
+</html>

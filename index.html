@@ -402,6 +402,8 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cleg i.cb{min-width:10px;width:10px;height:10px;padding:0}
 @media (max-width:760px){.rail.menu-open .rail-head{display:flex}}
 .tu{font-size:12.5px;color:var(--muted);margin-top:2px}
+.rsm{font-size:12.5px;font-weight:600;color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:0 9px;text-decoration:none;white-space:nowrap}
+.rsm:hover{border-color:var(--accent)}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -976,7 +978,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
           <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${s.trackerUpdated ? `<div class="tu">Tracker last updated ${esc(fmtStamp(s.trackerUpdated))}</div>` : ""}${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
           <span class="pill ${s.status === "Active" ? "active" : s.status === "Placed" ? "done" : "planned"}">${esc(s.status||"")}</span></div></summary>
         ${top.length ? `<ol class="tlist">${top.map((t,i) => `<li><span class="rk">${esc(t.rank||i+1)}</span>
-          <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}</div>
+          <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}${t.resume && !state.clientView ? ` <a class="rsm" href="${esc(t.resume)}" target="_blank" rel="noopener">Resume</a>` : ""}</div>
             <div class="tr">${esc([t.role, t.org].filter(Boolean).join(" · "))}</div>${t.summary ? `<div class="ts">${esc(t.summary)}</div>` : ""}</div>
           <div class="sc">${t.score !== "" && t.score != null ? `${showSc ? `<div class="n">${esc(t.score)}<span> / ${mx}</span></div>` : ""}<span class="share" title="Rubric rating"><i style="width:${Math.max(0, Math.min(100, (+t.score||0) / mx * 100))}%"></i></span>` : ""}${t.band ? `<span class="pill ${bandCls(t.band)}">${esc(t.band)}</span>` : ""}</div></li>`).join("")}</ol>`
           : `<div class="tnote">${esc(s.note || "No applicant tracker on file yet.")}</div>`}
@@ -1500,7 +1502,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "db7cb236ed";
+  var BUILD = "acc940d9ce";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
