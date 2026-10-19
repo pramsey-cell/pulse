@@ -1336,6 +1336,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
   const calFetch = (a, b) => call("getCalendar", a, b);
   const calCreate = o => call("createCalEvent", o);
   const calUserEmail = () => store.get("pulse.email") || "";
+  const calWhere = "Adds to Phil's VGCG Google Calendar.";
   /* ---------- Calendar (Phil's VGCG Google Calendar) ---------- */
   const CAL = { flash: "", h0: 8, events: [], loaded: false, loading: false, err: "", from: 0, to: 0, fetched: "", view: "", anchor: null, timer: 0 };
   const calDay = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -1371,7 +1372,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       const idx = calClientIndex();
       CAL.events = (r.events || []).filter(e => e.type !== "workingLocation").map(e => Object.assign(e, { s: calWhen(e.start), e2: calWhen(e.end), client: calClient(e, idx) }));
       CAL.from = start.getTime(); CAL.to = end.getTime(); CAL.fetched = r.fetched || new Date().toISOString(); CAL.loaded = true;
-    } catch (e) { const m = e.message || String(e); CAL.err = /authoriz|permission|scope|getCalendar|Unknown|not a function/i.test(m) ? "Pulse doesn't have access to your calendar yet. Once Calendar access is approved on the Pulse server, your events will show here." : m; }
+    } catch (e) { const m = e.message || String(e); CAL.err = !/claude\.ai|Permissions menu/.test(m) && /authoriz|permission|scope|getCalendar|Unknown|not a function/i.test(m) ? "Pulse doesn't have access to your calendar yet. Once Calendar access is approved on the Pulse server, your events will show here." : m; }
     CAL.loading = false;
     if (state.current === "__calendar" || state.current === "__home") renderMain();
   }
@@ -1541,7 +1542,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       <label class="check" id="nevNotifyRow" hidden><input type='checkbox' role='switch' id="nevNotify" checked> Email invitations to guests</label>
       <label>Description<textarea id="nevDesc" rows="4" maxlength="8000" placeholder="Agenda, notes, dial-in details…"></textarea></label>
       <p class="note nev-err" id="nevErr" hidden></p>
-      <div class="actions"><span class="note">Adds to Phil's VGCG Google Calendar.</span><span style="display:flex;gap:8px;margin-left:auto">
+      <div class="actions"><span class="note">${esc(calWhere)}</span><span style="display:flex;gap:8px;margin-left:auto">
         <button class="btn" type="button" id="nevCancel">Cancel</button>
         <button class="btn primary" type="submit" id="nevSave">Add to calendar</button></span></div>
     </form>`;
@@ -1613,7 +1614,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       setTimeout(() => { CAL.flash = ""; if (state.current === "__calendar") renderMain(); }, 12000);
     } catch (err) {
       const m = err.message || String(err);
-      calNevErr(/insufficient|scope|permission|forbidden|403/i.test(m) ? "Pulse can read your calendar but isn't allowed to add events yet. Calendar write access needs approving on the Pulse server." : m);
+      calNevErr(!/claude\.ai|Permissions menu/.test(m) && /insufficient|scope|forbidden|403/i.test(m) ? "Pulse can read your calendar but isn't allowed to add events yet. Calendar write access needs approving on the Pulse server." : m);
     } finally { NEV.busy = false; btn.disabled = false; btn.textContent = "Add to calendar"; }
   }
   document.addEventListener("click", e => {
@@ -1874,7 +1875,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "d300b93e2d";
+  var BUILD = "e474a25a9f";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
