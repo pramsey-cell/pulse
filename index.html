@@ -1842,7 +1842,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     d = Object.assign({}, d, { clients: (d.clients || []).map(c => { const x = Object.assign({}, c); if (x.logoId && logoCache[x.logoId]) x.logo = logoCache[x.logoId]; return x; }) });
     setTimeout(fetchLogos_, 0);
     state.clients = d.clients; state.items = d.items; state.invoices = d.invoices || []; state.overrides = d.overrides || []; state.searches = d.searches || []; state.canEdit = d.canEdit;
-    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
+    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && state.current !== "__calendar" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
     render();
   }
 
@@ -1955,7 +1955,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "b7b319cf32";
+  var BUILD = "e7c86096a3";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
