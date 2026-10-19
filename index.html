@@ -494,8 +494,8 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cal-upd{font-size:13px;color:var(--muted);white-space:nowrap}
 .cal-stats{grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px}
 
-.tfull{display:inline-flex;align-items:center;gap:4px;margin-top:6px;font:600 13px/1.3 var(--f-body);color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--surface)}
-.tfull:hover{border-color:var(--accent)}
+.tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.tfull:hover{text-decoration-thickness:2px}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -1067,7 +1067,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       const mx = +s.scoreMax || Math.max(100, ...top.map(t => +t.score||0));
       return `<details class="tcard"${s.status === "Active" ? " open" : ""}>
         <summary><div class="th">${cLogo(s.client)}<div><div class="tc"><button type="button" class="linkbtn" data-go="${esc(s.client)}">${esc(cName(s.client))}</button></div><h2>${esc(s.title)}</h2>
-          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${s.trackerUpdated ? `<div class="tu">Tracker last updated ${esc(fmtStamp(s.trackerUpdated))}</div>` : ""}${(() => { const m = state.clientView ? null : String(s.source || "").match(/\((?:Google \w+ )?([-\w]{25,})\)/); return m ? `<a class="tfull" href="https://drive.google.com/open?id=${esc(m[1])}" target="_blank" rel="noopener">Full tracker <span aria-hidden="true">↗</span></a>` : ""; })()}${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
+          <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${s.trackerUpdated ? `<div class="tu">Tracker last updated ${esc(fmtStamp(s.trackerUpdated))}</div>` : ""}${(() => { if (state.clientView) return ""; const m = String(s.source || "").match(/\((?:Google \w+ )?([-\w]{25,})\)/); const u = s.trackerUrl || (m ? "https://drive.google.com/open?id=" + m[1] : ""); return u ? `<a class="tfull" href="${esc(u)}" target="_blank" rel="noopener">${esc(s.trackerLabel || "Full Tracker")} ↗</a>` : ""; })()}${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
           <span class="pill ${s.status === "Active" ? "active" : s.status === "Placed" ? "done" : "planned"}">${esc(s.status||"")}</span></div></summary>
         ${top.length ? `<ol class="tlist">${top.map((t,i) => `<li><span class="rk">${esc(t.rank||i+1)}</span>
           <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}${t.resume && !state.clientView ? ` <a class="rsm" href="${esc(t.resume)}" target="_blank" rel="noopener">Resume</a>` : ""}</div>
@@ -1957,7 +1957,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "971b5a3eac";
+  var BUILD = "e5cf73568d";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
