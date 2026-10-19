@@ -456,6 +456,34 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cal-day.today h3{color:var(--accent)}
 .cal-day .cal-list{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:2px 14px}
 @media (max-width:640px){.cal-row{grid-template-columns:minmax(0,1fr) auto}.cal-t{grid-column:1/-1}.cal-join span{display:none}}
+.cal-acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.cal-strip-acts{display:flex;gap:14px;align-items:center}
+.cal-flash{margin:0;background:var(--active-soft);color:var(--active);font-weight:500}
+.cal-col.addable{cursor:copy}
+.cal-col.addable:hover{background-color:color-mix(in srgb,var(--accent-soft) 30%,transparent)}
+.cal-col.addable .cal-ev{cursor:default}
+#nevDlg{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+.nev h2{margin:0 0 2px;font:600 20px/1.2 var(--f-display)}
+.nev-when{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px}
+.nev input,.nev select,.nev textarea{font:inherit;font-size:15px;min-width:0}
+.nev-hint{margin:-4px 0 0;font-size:12.5px;color:var(--muted);min-height:1em}
+.nev-hint.bad,.nev-err{color:var(--late)}
+.nev-zoom{border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.nev-zoom legend{font-size:13px;color:var(--muted);padding:0;margin-bottom:6px;width:100%}
+.nev-zoom label{flex-direction:row;color:var(--ink);font-size:14px;position:relative}
+.nev-zoom input{position:absolute;opacity:0;pointer-events:none}
+.nev-zoom span{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer;background:var(--bg)}
+.nev-zoom input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:600}
+.nev-zoom input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.nev-guests-l{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);margin-bottom:-6px}
+.nev-guests{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:6px 8px;cursor:text}
+.nev-guests:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+#nevChips{display:contents}
+.nev-chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;max-width:100%;overflow-wrap:anywhere}
+.nev-chip button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 5px}
+.nev-guests input{border:0 !important;outline:0;background:transparent !important;flex:1 1 180px;padding:4px 2px !important}
+.nev .actions{align-items:center}
+@media (max-width:520px){.nev-when{grid-template-columns:1fr 1fr}.nev-when label:first-child{grid-column:1/-1}.nev .actions>.note{display:none}}
 
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
@@ -1306,8 +1334,10 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
   });
 
   const calFetch = (a, b) => call("getCalendar", a, b);
+  const calCreate = o => call("createCalEvent", o);
+  const calUserEmail = () => store.get("pulse.email") || "";
   /* ---------- Calendar (Phil's VGCG Google Calendar) ---------- */
-  const CAL = { events: [], loaded: false, loading: false, err: "", from: 0, to: 0, fetched: "", view: "", anchor: null, timer: 0 };
+  const CAL = { flash: "", h0: 8, events: [], loaded: false, loading: false, err: "", from: 0, to: 0, fetched: "", view: "", anchor: null, timer: 0 };
   const calDay = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
   const calAdd = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
   const calWeekStart = d => calAdd(calDay(d), -calDay(d).getDay());
@@ -1376,7 +1406,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     else if (!CAL.loaded) body = `<div class="cal-empty">Loading your calendar…</div>`;
     else if (!today.length) body = `<div class="cal-empty">No more meetings today.${next ? ` Next: <b>${esc(calDayLabel(next.s))} ${esc(calTime(next.s))}</b>, ${esc(next.title)}` : ""}</div>`;
     else body = today.slice(0, 6).map(calRow).join("") + (today.length > 6 ? `<button type="button" class="linkbtn cal-more" data-id-go="__calendar">${today.length - 6} more today</button>` : "");
-    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></div><div class="cal-list">${body}</div></section>`;
+    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div></section>`;
   }
   function calWeekGrid(ws) {
     const days = [...Array(7)].map((_, i) => calAdd(ws, i));
@@ -1384,14 +1414,14 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const timed = evs.filter(e => !e.allDay), allday = evs.filter(e => e.allDay);
     let h0 = 8, h1 = 18;
     timed.forEach(e => { h0 = Math.min(h0, e.s.getHours()); h1 = Math.max(h1, Math.min(24, e.e2.getHours() + (e.e2.getMinutes() ? 1 : 0))); });
-    const PX = 46, top = h => (h - h0) * PX;
+    const PX = 46, top = h => (h - h0) * PX; CAL.h0 = h0;
     const todayK = calKey(new Date());
     const col = d => {
       const k = calKey(d), list = timed.filter(e => calKey(e.s) === k).sort((a, b) => a.s - b.s);
       const lanes = []; list.forEach(e => { let l = lanes.findIndex(end => end <= e.s.getTime()); if (l < 0) { l = lanes.length; lanes.push(0); } lanes[l] = e.e2.getTime(); e._lane = l; });
       const n = Math.max(1, lanes.length);
       const nowLine = k === todayK ? (() => { const t = new Date(), h = t.getHours() + t.getMinutes() / 60; return h >= h0 && h <= h1 ? `<i class="cal-now" style="top:${top(h)}px"></i>` : ""; })() : "";
-      return `<div class="cal-col${k === todayK ? " today" : ""}" style="height:${(h1 - h0) * PX}px">${nowLine}${list.map(e => {
+      return `<div class="cal-col${k === todayK ? " today" : ""}${state.clientView ? "" : " addable"}" data-day="${k}" style="height:${(h1 - h0) * PX}px">${nowLine}${list.map(e => {
         const sh = e.s.getHours() + e.s.getMinutes() / 60, eh = Math.max(sh + 0.5, (calKey(e.e2) !== k ? 24 : e.e2.getHours() + e.e2.getMinutes() / 60));
         const hpx = Math.max(22, (eh - sh) * PX - 2), short = hpx < 40;
         return `<div class="cal-ev${short ? " short" : ""}${e.response === "declined" ? " declined" : ""}${e.client ? " has-client" : ""}${calLive(e) ? " now" : ""}" style="top:${top(sh)}px;height:${hpx}px;left:calc(${(e._lane / n) * 100}% + 2px);width:calc(${100 / n}% - 4px)" title="${esc(calTime(e.s) + " " + e.title)}">
@@ -1423,8 +1453,9 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const body = CAL.err ? `<div class="empty">${esc(CAL.err)}</div>` : !CAL.loaded ? `<div class="empty">Loading your calendar…</div>` : (CAL.view === "week" ? calWeekGrid(ws) : calAgenda(CAL.view === "agenda" ? ws : ws, 14));
     main.innerHTML = `<div class="top"><header class="head"><div style="min-width:0">
         <h1>Calendar</h1>
-        <p class="lede">Every event on your VGCG Google Calendar. Join opens the meeting link in a new tab; event titles open in Google Calendar.${CAL.fetched ? ` Updated ${esc(calTime(new Date(CAL.fetched)))}.` : ""}</p>
-      </div><button type="button" class="btn" data-cal="refresh">Refresh</button></header>
+        <p class="lede">Every event on your VGCG Google Calendar. Join opens the meeting link in a new tab; event titles open in Google Calendar. Click an open time in the week to add an event there.${CAL.fetched ? ` Updated ${esc(calTime(new Date(CAL.fetched)))}.` : ""}</p>
+      </div><div class="cal-acts"><button type="button" class="btn" data-cal="refresh">Refresh</button>${state.clientView ? "" : `<button type="button" class="btn primary" data-cal-new>+ New event</button>`}</div></header>
+      ${CAL.flash ? `<div class="banner cal-flash" role="status">${esc(CAL.flash)}</div>` : ""}
       ${CAL.loaded ? `<div class="stats"><div class="stat"><div class="n">${weekEvents.length}</div><div class="l">meetings this week</div></div><div class="stat"><div class="n">${clientMtgs}</div><div class="l">with clients</div></div><div class="stat"><div class="n">${withLinks}</div><div class="l">with meeting links</div></div><div class="stat"><div class="n">${(weekEvents.reduce((s, e) => s + (e.e2 - e.s), 0) / 36e5).toFixed(1)}</div><div class="l">hours booked</div></div></div>` : ""}
       <div class="cal-bar"><div class="cal-nav"><button type="button" class="btn" data-cal="prev" aria-label="Previous week">‹</button><button type="button" class="btn" data-cal="today">Today</button><button type="button" class="btn" data-cal="next" aria-label="Next week">›</button><span class="cal-range">${esc(label)}</span></div>
         <div class="filters">${[["week", "Week"], ["agenda", "List"]].map(([k, l]) => `<button type="button" data-calview="${k}" aria-pressed="${CAL.view === k}">${l}</button>`).join("")}</div></div></div>
@@ -1435,6 +1466,163 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const b = e.target.closest("[data-cal]");
     if (b) { const a = b.dataset.cal; if (a === "refresh") { CAL.loaded = false; loadCal(true); renderMain(); } else { CAL.anchor = a === "today" ? new Date() : calAdd(CAL.anchor || new Date(), a === "prev" ? -7 : 7); renderMain(); loadCal(); } return; }
     const g = e.target.closest("[data-id-go]"); if (g) { const nb = document.querySelector(`[data-id="${g.dataset.idGo}"]`); if (nb) nb.click(); }
+  });
+  /* ---------- Calendar: quick-add an event (syncs to Google Calendar) ---------- */
+  const CAL_TZ = [["America/New_York", "Eastern (ET)"], ["America/Chicago", "Central (CT)"], ["America/Denver", "Mountain (MT)"], ["America/Phoenix", "Arizona (MST)"], ["America/Los_Angeles", "Pacific (PT)"], ["America/Anchorage", "Alaska (AKT)"], ["Pacific/Honolulu", "Hawaii (HT)"], ["Europe/London", "London (UK)"], ["UTC", "UTC"]];
+  const CAL_PEOPLE = { phil: ["Phil", "pramsey@victoriagillespieconsulting.com"], victoria: ["Victoria", "vgillespie@victoriagillespieconsulting.com"] };
+  const calMe = () => /vgillespie/i.test(calUserEmail() || "") ? "victoria" : "phil";
+  const calMyTz = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York"; } catch (e) { return "America/New_York"; } };
+  const CAL_EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[a-z]{2,}$/i;
+  const pad2 = n => String(n).padStart(2, "0");
+  /* wall-clock time in a zone -> real instant */
+  function calZoned(date, time, tz) {
+    const [y, mo, d] = date.split("-").map(Number), [h, mi] = time.split(":").map(Number);
+    let t = Date.UTC(y, mo - 1, d, h, mi);
+    for (let i = 0; i < 2; i++) {
+      const p = {}; new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(t)).forEach(x => p[x.type] = x.value);
+      const seen = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+      t += Date.UTC(y, mo - 1, d, h, mi) - seen;
+    }
+    return new Date(t);
+  }
+  const NEV = { guests: [], busy: false };
+  function calGuestChips() {
+    const box = $("#nevChips"); if (!box) return;
+    box.innerHTML = NEV.guests.map((g, i) => `<span class="nev-chip">${esc(g)}<button type="button" data-nev-rm="${i}" aria-label="Remove ${esc(g)}">×</button></span>`).join("");
+    const me = calMe(), other = me === "phil" ? "victoria" : "phil";
+    $("#nevQuick").innerHTML = NEV.guests.includes(CAL_PEOPLE[other][1]) ? "" : `<button type="button" class="linkbtn" data-nev-add="${esc(CAL_PEOPLE[other][1])}">+ Add ${CAL_PEOPLE[other][0]}</button>`;
+    $("#nevNotifyRow").hidden = !NEV.guests.length;
+  }
+  function calAddGuests(text) {
+    const bad = [];
+    String(text || "").split(/[\s,;]+/).map(s => s.replace(/^.*<|>$/g, "").trim().toLowerCase()).filter(Boolean).forEach(s => {
+      if (!CAL_EMAIL.test(s)) bad.push(s); else if (!NEV.guests.includes(s)) NEV.guests.push(s);
+    });
+    calGuestChips();
+    return bad;
+  }
+  function calNevHint() {
+    const d = $("#nevDate").value, s = $("#nevStart").value, e = $("#nevEnd").value, tz = $("#nevTz").value, my = calMyTz();
+    const h = $("#nevHint");
+    if (!d || !s || !e) { h.textContent = ""; return; }
+    if (e <= s) { h.textContent = "The end time needs to be after the start time."; h.className = "nev-hint bad"; return; }
+    const mins = (+e.slice(0, 2) * 60 + +e.slice(3)) - (+s.slice(0, 2) * 60 + +s.slice(3));
+    const dur = mins >= 60 ? `${Math.floor(mins / 60)} hr${mins % 60 ? ` ${mins % 60} min` : ""}` : `${mins} min`;
+    let txt = dur;
+    if (tz !== my) {
+      const a = calZoned(d, s, tz), b = calZoned(d, e, tz);
+      txt += ` · ${calDayLabel(a)}, ${calTime(a)} – ${calTime(b)} your time`;
+    }
+    h.textContent = txt; h.className = "nev-hint";
+  }
+  function calNevDialog() {
+    let dlg = $("#nevDlg"); if (dlg) return dlg;
+    const contacts = [];
+    state.clients.forEach(c => (c.contacts || []).forEach(p => { if (p.email && CAL_EMAIL.test(p.email)) contacts.push([p.email.toLowerCase(), `${p.name} · ${c.short || c.name}`]); }));
+    dlg = document.createElement("dialog"); dlg.id = "nevDlg";
+    dlg.innerHTML = `<form class="form nev" id="nevForm" novalidate>
+      <h2>New event</h2>
+      <label>Meeting title<input id="nevTitle" required maxlength="200" autocomplete="off"></label>
+      <div class="nev-when">
+        <label>Date<input id="nevDate" type="date" required></label>
+        <label>Start<input id="nevStart" type="time" step="900" required></label>
+        <label>End<input id="nevEnd" type="time" step="900" required></label>
+      </div>
+      <label>Time zone<select id="nevTz">${CAL_TZ.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></label>
+      <p class="nev-hint" id="nevHint"></p>
+      <fieldset class="nev-zoom"><legend>Meeting link</legend>
+        <label><input type="radio" name="nevZoom" value="phil"><span>Phil's Zoom</span></label>
+        <label><input type="radio" name="nevZoom" value="victoria"><span>Victoria's Zoom</span></label>
+        <label><input type="radio" name="nevZoom" value=""><span>No link</span></label>
+      </fieldset>
+      <div class="nev-guests-l"><span>Guests</span><span id="nevQuick"></span></div>
+      <div class="nev-guests" id="nevGuestBox"><span id="nevChips"></span><input id="nevGuest" type="email" list="nevContacts" placeholder="Add email, press Enter" autocomplete="off" multiple></div>
+      <datalist id="nevContacts">${contacts.map(([e, l]) => `<option value="${esc(e)}">${esc(l)}</option>`).join("")}</datalist>
+      <label class="check" id="nevNotifyRow" hidden><input type='checkbox' role='switch' id="nevNotify" checked> Email invitations to guests</label>
+      <label>Description<textarea id="nevDesc" rows="4" maxlength="8000" placeholder="Agenda, notes, dial-in details…"></textarea></label>
+      <p class="note nev-err" id="nevErr" hidden></p>
+      <div class="actions"><span class="note">Adds to Phil's VGCG Google Calendar.</span><span style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn" type="button" id="nevCancel">Cancel</button>
+        <button class="btn primary" type="submit" id="nevSave">Add to calendar</button></span></div>
+    </form>`;
+    document.body.appendChild(dlg);
+    const f = $("#nevForm");
+    f.addEventListener("input", e => { if (["nevDate", "nevEnd", "nevTz"].includes(e.target.id)) calNevHint(); });
+    $("#nevStart").addEventListener("change", () => {
+      const s = $("#nevStart").value, prev = $("#nevStart").dataset.prev, e = $("#nevEnd").value;
+      if (s) {
+        let dur = 30;
+        if (prev && e && e > prev) dur = (+e.slice(0, 2) * 60 + +e.slice(3)) - (+prev.slice(0, 2) * 60 + +prev.slice(3));
+        const m = Math.min(23 * 60 + 59, +s.slice(0, 2) * 60 + +s.slice(3) + dur);
+        $("#nevEnd").value = pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+        $("#nevStart").dataset.prev = s;
+      }
+      calNevHint();
+    });
+    const g = $("#nevGuest");
+    g.addEventListener("keydown", e => {
+      if (["Enter", ",", ";", " ", "Tab"].includes(e.key) && g.value.trim()) { e.preventDefault(); const bad = calAddGuests(g.value); g.value = bad.join(", "); calNevErr(bad.length ? `Check ${bad.length === 1 ? "this email" : "these emails"}: ${bad.join(", ")}` : ""); }
+      else if (e.key === "Backspace" && !g.value && NEV.guests.length) { NEV.guests.pop(); calGuestChips(); }
+    });
+    g.addEventListener("paste", e => { const t = (e.clipboardData || window.clipboardData).getData("text"); if (/[\s,;]/.test(t.trim())) { e.preventDefault(); const bad = calAddGuests(t); g.value = bad.join(", "); } });
+    g.addEventListener("change", () => { if (CAL_EMAIL.test(g.value.trim())) { calAddGuests(g.value); g.value = ""; } });
+    $("#nevGuestBox").addEventListener("click", e => {
+      const rm = e.target.closest("[data-nev-rm]"); if (rm) { NEV.guests.splice(+rm.dataset.nevRm, 1); calGuestChips(); return; }
+      g.focus();
+    });
+    dlg.addEventListener("click", e => { const a = e.target.closest("[data-nev-add]"); if (a) calAddGuests(a.dataset.nevAdd); });
+    $("#nevCancel").addEventListener("click", () => dlg.close());
+    f.addEventListener("submit", calNevSubmit);
+    return dlg;
+  }
+  function calNevErr(m) { const p = $("#nevErr"); p.textContent = m || ""; p.hidden = !m; }
+  function calNewEvent(date, time) {
+    const dlg = calNevDialog();
+    $("#nevForm").reset(); NEV.guests = []; calNevErr("");
+    const now = new Date(), start = time ? null : new Date(Math.ceil((now.getTime() + 5 * 60e3) / 18e5) * 18e5);
+    $("#nevDate").value = date || calKey(start);
+    $("#nevStart").value = time || pad2(start.getHours()) + ":" + pad2(start.getMinutes());
+    const [h, m] = $("#nevStart").value.split(":").map(Number), em = Math.min(23 * 60 + 59, h * 60 + m + 30);
+    $("#nevEnd").value = pad2(Math.floor(em / 60)) + ":" + pad2(em % 60);
+    $("#nevStart").dataset.prev = $("#nevStart").value;
+    const tz = calMyTz(); $("#nevTz").value = CAL_TZ.some(([v]) => v === tz) ? tz : "America/New_York";
+    const me = calMe(); dlg.querySelector(`input[name="nevZoom"][value="${me}"]`).checked = true;
+    calGuestChips(); calNevHint();
+    dlg.showModal(); setTimeout(() => $("#nevTitle").focus(), 30);
+  }
+  async function calNevSubmit(e) {
+    e.preventDefault();
+    if (NEV.busy) return;
+    const g = $("#nevGuest"); if (g.value.trim()) { const bad = calAddGuests(g.value); g.value = bad.join(", "); if (bad.length) return calNevErr(`Check ${bad.length === 1 ? "this email" : "these emails"}: ${bad.join(", ")}`); }
+    const title = $("#nevTitle").value.trim(), d = $("#nevDate").value, s = $("#nevStart").value, en = $("#nevEnd").value, tz = $("#nevTz").value;
+    if (!title) { $("#nevTitle").focus(); return calNevErr("Add a meeting title."); }
+    if (!d || !s || !en) return calNevErr("Pick a date, start time and end time.");
+    if (en <= s) return calNevErr("The end time needs to be after the start time.");
+    const zoom = ($("#nevForm").querySelector('input[name="nevZoom"]:checked') || {}).value || "";
+    const payload = { title, description: $("#nevDesc").value, start: d + "T" + s, end: d + "T" + en, tz, zoom, guests: NEV.guests.slice(), notify: $("#nevNotify").checked };
+    NEV.busy = true; const btn = $("#nevSave"); btn.disabled = true; btn.textContent = "Adding…"; calNevErr("");
+    try {
+      const ev = await calCreate(payload);
+      $("#nevDlg").close();
+      const idx = calClientIndex();
+      if (ev && ev.start) { Object.assign(ev, { s: calWhen(ev.start), e2: calWhen(ev.end), client: calClient(ev, idx) }); CAL.events = CAL.events.filter(x => x.id !== ev.id).concat(ev).sort((a, b) => a.s - b.s); }
+      CAL.flash = `Added “${title}” to your Google Calendar${payload.guests.length && payload.notify ? ` and sent ${payload.guests.length === 1 ? "an invitation" : payload.guests.length + " invitations"}` : ""}.`;
+      CAL.anchor = calZoned(d, s, tz);
+      renderMain();
+      setTimeout(() => loadCal(true), 1500);
+      setTimeout(() => { CAL.flash = ""; if (state.current === "__calendar") renderMain(); }, 12000);
+    } catch (err) {
+      const m = err.message || String(err);
+      calNevErr(/insufficient|scope|permission|forbidden|403/i.test(m) ? "Pulse can read your calendar but isn't allowed to add events yet. Calendar write access needs approving on the Pulse server." : m);
+    } finally { NEV.busy = false; btn.disabled = false; btn.textContent = "Add to calendar"; }
+  }
+  document.addEventListener("click", e => {
+    const n = e.target.closest("[data-cal-new]"); if (n) { calNewEvent(); return; }
+    const col = e.target.closest(".cal-col[data-day]");
+    if (col && !e.target.closest(".cal-ev") && !state.clientView) {
+      const y = e.clientY - col.getBoundingClientRect().top, h = (CAL.h0 || 8) + y / 46, hh = Math.floor(h), mm = h - hh >= 0.5 ? 30 : 0;
+      calNewEvent(col.dataset.day, pad2(Math.min(23, hh)) + ":" + pad2(mm));
+    }
   });
   function render(){ renderRail(); renderMain(); }
 
@@ -1686,7 +1874,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "b8ecadccec";
+  var BUILD = "d300b93e2d";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
