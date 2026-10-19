@@ -708,7 +708,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const otherC = state.clients.filter(c => !isActive(c) && !isProsp(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
     const sorted = [...prospC, ...activeC, ...otherC];
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
-    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? `<span class="count">${state.searches.length}</span>` : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
+    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
     const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
     const pL = prospC.filter(matchQ), aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
@@ -1955,7 +1955,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "e7c86096a3";
+  var BUILD = "325c61d9f9";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
