@@ -494,6 +494,12 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cal-upd{font-size:13px;color:var(--muted);white-space:nowrap}
 .cal-stats{grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px}
 .due-board{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.due-board>summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.due-board>summary::-webkit-details-marker{display:none}
+.due-board>summary h2::before{content:"";display:inline-block;vertical-align:middle;margin:-2px 9px 0 2px;border-left:6px solid var(--muted);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .15s}
+.due-board[open]>summary h2::before{transform:rotate(90deg)}
+.due-board:not([open]){gap:0}
+.due-board[open]>summary{margin-bottom:12px}
 .due-board .section-head h2{font-size:17px}
 .due-counts{display:flex;flex-wrap:wrap;gap:6px}
 .due-c{font:600 12px/1.6 var(--f-body);padding:0 9px;border-radius:999px;background:var(--planned-soft);color:var(--planned)}
@@ -505,10 +511,11 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .due-g.late h3{color:var(--late)}
 .due-n{font:600 11.5px/1.6 var(--f-body);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted);letter-spacing:0}
 .due-g.later{grid-column:1/-1}
-.due-g.later>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center}
-.due-g.later>summary::-webkit-details-marker{display:none}
-.due-g.later>summary::before{content:"";border-left:5px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
-.due-g.later[open]>summary::before{transform:rotate(90deg)}
+.due-g>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.due-g>summary::-webkit-details-marker{display:none}
+.due-g>summary::before{content:"";border-left:5px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.due-g[open]>summary::before{transform:rotate(90deg)}
+.due-g.late>summary::before{border-left-color:var(--late)}
 .due-list{display:flex;flex-direction:column}
 .due-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .due-list>.due-row:first-child{border-top:0}
@@ -537,6 +544,8 @@ button.cal-du.late{cursor:pointer}
 .due-acts{display:flex;gap:6px}
 .due-edit{padding:4px 10px;font-size:13px}
 .cal-du.late{cursor:pointer}
+/* Calendar page scrolls as one page on wide screens (other pages keep their split columns) */
+@media (min-width:1400px){.main:has(.cal-bar){overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding-bottom:28px}.main:has(.cal-bar) .col-full{overflow:visible;min-height:auto;padding-bottom:0}}
 
 .tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .tfull:hover{text-decoration-thickness:2px}
@@ -1507,7 +1516,8 @@ button.cal-du.late{cursor:pointer}
     await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal, due: it.due || "" });
     await load();
   }
-  const DUE = { busy: {}, err: "", laterOpen: false };
+  const DUE = { busy: {}, err: "", fold: (() => { try { return JSON.parse(localStorage.getItem("pulse.todoFold") || "null") || { later: true }; } catch (e) { return { later: true }; } })() };
+  const dueFoldSave = () => { try { localStorage.setItem("pulse.todoFold", JSON.stringify(DUE.fold)); } catch (e) {} };
   const dueToday = () => calKey(new Date());
   /* the due date: the item's Due date when set, otherwise its date */
   const dueKey = i => /^\d{4}-\d{2}-\d{2}$/.test(i.due || "") ? i.due : i.date;
@@ -1534,7 +1544,8 @@ button.cal-du.late{cursor:pointer}
   }
   /* the to-do overview at the top of the Calendar page */
   function dueBoard() {
-    const all = dueList(); if (!all.length && !DUE.err) return state.clientView ? "" : `<section class="due-board"><div class="section-head"><h2>To do</h2></div><div class="cal-empty">Nothing open with a due date. Planned and in-progress work items with a date show up here.</div></section>`;
+    if (state.clientView) return "";
+    const all = dueList();
     const t = dueToday(), wk = calKey(calAdd(new Date(), 7)), two = calKey(calAdd(new Date(), 21));
     const groups = [
       ["late", "Overdue", all.filter(i => dueKey(i) < t)],
@@ -1544,12 +1555,12 @@ button.cal-du.late{cursor:pointer}
       ["later", "Later", all.filter(i => dueKey(i) > two)]
     ].filter(g => g[2].length);
     const counts = groups.map(g => `<span class="due-c ${g[0]}">${g[2].length} ${g[1].toLowerCase()}</span>`).join("");
-    return `<section class="due-board"><div class="section-head"><h2>To do</h2><div class="due-counts">${counts}</div></div>
-      ${DUE.err ? `<div class="banner">${esc(DUE.err)}</div>` : ""}
-      <div class="due-groups">${groups.map(([k, label, list]) => k === "later"
-        ? `<details class="due-g later"${DUE.laterOpen ? " open" : ""}><summary><h3>${label}</h3><span class="due-n">${list.length}</span></summary><div class="due-list">${list.map(i => dueRowHtml(i, true)).join("")}</div></details>`
-        : `<div class="due-g ${k}"><h3>${label}<span class="due-n">${list.length}</span></h3><div class="due-list">${list.map(i => dueRowHtml(i, true)).join("")}</div></div>`).join("")}</div></section>`;
+    const body = !all.length ? `<div class="cal-empty">Nothing open with a due date. Planned and in-progress work items with a date show up here.</div>`
+      : `<div class="due-groups">${groups.map(([k, label, list]) => `<details class="due-g ${k}" data-fold="${k}"${DUE.fold[k] ? "" : " open"}><summary><h3>${label}</h3><span class="due-n">${list.length}</span></summary><div class="due-list">${list.map(i => dueRowHtml(i, true)).join("")}</div></details>`).join("")}</div>`;
+    return `<details class="due-board" data-fold="board"${DUE.fold.board ? "" : " open"}><summary class="section-head"><h2>To do</h2><div class="due-counts">${counts}</div></summary>
+      ${DUE.err ? `<div class="banner">${esc(DUE.err)}</div>` : ""}${body}</details>`;
   }
+
   /* a "Due" strip under the day headers in the week view */
   function dueWeekRow(days) {
     const t = dueToday(), by = dueByDay(days[0], calAdd(days[days.length - 1], 1));
@@ -1575,7 +1586,8 @@ button.cal-du.late{cursor:pointer}
   }
   document.addEventListener("click", e => {
     const d = e.target.closest("[data-due-done]"); if (d) { e.preventDefault(); e.stopPropagation(); dueMarkDone(d.dataset.dueDone); return; }
-    const s = e.target.closest(".due-g.later > summary"); if (s) setTimeout(() => { DUE.laterOpen = !!s.parentElement.open; }, 0);
+    const f = e.target.closest("details[data-fold] > summary");
+    if (f && !e.target.closest("button,a")) { const d = f.parentElement; setTimeout(() => { DUE.fold[d.dataset.fold] = !d.open; dueFoldSave(); }, 0); }
   }, true);
   function renderCalendar() {
     const main = $("#main");
@@ -2081,7 +2093,7 @@ button.cal-du.late{cursor:pointer}
 </script>
 <script>
 (function () {
-  var BUILD = "98fdd5d257";
+  var BUILD = "9ef3d84cb2";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
