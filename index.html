@@ -493,6 +493,47 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 .cal-title h1{margin-bottom:4px}
 .cal-upd{font-size:13px;color:var(--muted);white-space:nowrap}
 .cal-stats{grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px}
+.due-board{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.due-board .section-head h2{font-size:17px}
+.due-counts{display:flex;flex-wrap:wrap;gap:6px}
+.due-c{font:600 12px/1.6 var(--f-body);padding:0 9px;border-radius:999px;background:var(--planned-soft);color:var(--planned)}
+.due-c.late{background:var(--late-soft);color:var(--late)}
+.due-c.today,.due-c.week{background:var(--active-soft);color:var(--active)}
+.due-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px 18px;align-items:start}
+.due-g{display:flex;flex-direction:column;gap:4px;min-width:0}
+.due-g h3,.due-g summary h3{font:600 13px/1.3 var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0;display:inline-flex;gap:8px;align-items:center}
+.due-g.late h3{color:var(--late)}
+.due-n{font:600 11.5px/1.6 var(--f-body);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:0 7px;color:var(--muted);letter-spacing:0}
+.due-g.later{grid-column:1/-1}
+.due-g.later>summary{cursor:pointer;list-style:none;display:flex;gap:8px;align-items:center}
+.due-g.later>summary::-webkit-details-marker{display:none}
+.due-g.later>summary::before{content:"";border-left:5px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.due-g.later[open]>summary::before{transform:rotate(90deg)}
+.due-list{display:flex;flex-direction:column}
+.due-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.due-list>.due-row:first-child{border-top:0}
+.due-d{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+.due-d span{font-size:11px;font-weight:600;color:var(--late)}
+.due-t{font-weight:600;font-size:14px;display:flex;gap:7px;align-items:baseline;min-width:0}
+.due-m{font-size:12.5px;color:var(--muted);margin-top:1px}
+.due-m .linkbtn{font-size:12.5px}
+.due-dot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--planned);transform:translateY(-1px)}
+.due-dot.active{background:var(--active)}
+.due-dot.late{background:var(--late)}
+.due-done{padding:4px 10px;font-size:13px}
+.due-row.busy{opacity:.6}
+.cal-due>div{gap:3px}
+.cal-du{display:block;width:100%;text-align:left;font:11.5px/1.35 var(--f-body);border:0;border-left:3px solid var(--planned);background:var(--planned-soft);color:var(--ink);border-radius:4px;padding:2px 6px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-du.active{border-left-color:var(--active);background:var(--active-soft)}
+.cal-du.late{border-left-color:var(--late);background:var(--late-soft);color:var(--late);font-weight:600;cursor:default}
+button.cal-du.late{cursor:pointer}
+.cal-due .cal-gut{color:var(--late);font-weight:600}
+.due-tag{font:600 11px/1.6 var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--active);background:var(--active-soft);border-radius:4px;padding:0 6px}
+.due-in-list.late .due-tag{color:var(--late);background:var(--late-soft)}
+.due-strip{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;font-size:13.5px;color:var(--muted)}
+.due-strip b{color:var(--ink)}
+.due-strip b.late{color:var(--late)}
+@media (max-width:640px){.due-row{grid-template-columns:minmax(0,1fr) auto}.due-d{grid-column:1/-1;flex-direction:row;gap:8px}}
 
 .tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .tfull:hover{text-decoration-thickness:2px}
@@ -1420,7 +1461,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     else if (!CAL.loaded) body = `<div class="cal-empty">Loading your calendar…</div>`;
     else if (!today.length) body = `<div class="cal-empty">No more meetings today.${next ? ` Next: <b>${esc(calDayLabel(next.s))} ${esc(calTime(next.s))}</b>, ${esc(next.title)}` : ""}</div>`;
     else body = today.slice(0, 6).map(calRow).join("") + (today.length > 6 ? `<button type="button" class="linkbtn cal-more" data-id-go="__calendar">${today.length - 6} more today</button>` : "");
-    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div></section>`;
+    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div>${dueStripLine()}</section>`;
   }
   function calWeekGrid(ws) {
     const days = [...Array(7)].map((_, i) => calAdd(ws, i));
@@ -1444,6 +1485,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     };
     return `<div class="cal-week"><div class="cal-head"><div></div>${days.map(d => `<div class="${calKey(d) === todayK ? "today" : ""}"><span>${d.toLocaleDateString("en-US", { weekday: "short" })}</span> <b>${d.getDate()}</b></div>`).join("")}</div>
       ${allday.length ? `<div class="cal-allday"><div class="cal-gut">All day</div>${days.map(d => `<div>${allday.filter(e => e.s <= d && e.e2 > d).map(e => `<a class="cal-ad" href="${esc(e.html || "#")}" target="_blank" rel="noopener">${esc(e.title)}</a>`).join("")}</div>`).join("")}</div>` : ""}
+      ${dueWeekRow(days)}
       <div class="cal-body"><div class="cal-hours">${[...Array(h1 - h0)].map((_, i) => `<div style="height:${PX}px">${calTime(new Date(2026, 0, 1, h0 + i))}</div>`).join("")}</div>${days.map(col).join("")}</div></div>`;
   }
   function calAgenda(from, days) {
@@ -1451,10 +1493,84 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
     const evs = CAL.events.filter(e => e.s < to && e.e2 > from);
     const groups = {};
     evs.forEach(e => { const k = calKey(e.s < from ? from : e.s); (groups[k] = groups[k] || []).push(e); });
-    const keys = Object.keys(groups).sort();
-    return keys.length ? keys.map(k => `<div class="cal-day${k === todayK ? " today" : ""}"><h3>${k === todayK ? "Today · " : ""}${esc(calLong(calWhen(k)))}</h3><div class="cal-list">${groups[k].map(calRow).join("")}</div></div>`).join("")
+    const dg = dueByDay(from, to);
+    const keys = [...new Set([...Object.keys(groups), ...Object.keys(dg)])].sort();
+    return keys.length ? keys.map(k => `<div class="cal-day${k === todayK ? " today" : ""}"><h3>${k === todayK ? "Today · " : ""}${esc(calLong(calWhen(k)))}</h3><div class="cal-list">${(groups[k] || []).map(calRow).join("")}${(dg[k] || []).map(dueRow).join("")}</div></div>`).join("")
       : `<div class="empty">No events in this range.</div>`;
   }
+  /* ---------- Due dates: open work items (Planned / In progress) with a date, shown as a to-do overview and on the calendar ---------- */
+  async function dueSave(it) {
+    await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal });
+    await load();
+  }
+  const DUE = { busy: {}, err: "", laterOpen: false };
+  const dueToday = () => calKey(new Date());
+  const dueList = () => state.clientView ? [] : state.items
+    .filter(i => (i.status === "planned" || i.status === "active") && /^\d{4}-\d{2}-\d{2}$/.test(i.date || "") && i.kind !== "invoice" && i.kind !== "contract")
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.title).localeCompare(String(b.title)));
+  const dueId = i => i._id || i.id;
+  const dueClient = i => { const c = state.clients.find(x => x.id === i.client); return c ? (c.short || c.name) : i.client; };
+  const dueWsName = i => { const c = state.clients.find(x => x.id === i.client); const w = c && (c.workstreams || []).find(z => z.id === i.ws); return w ? w.name : ""; };
+  const dueLate = i => i.date < dueToday();
+  const dueDay = k => calDayLabel(calWhen(k));
+  function dueByDay(from, to) {
+    const a = calKey(from), b = calKey(to), out = {};
+    dueList().forEach(i => { if (i.date >= a && i.date < b) (out[i.date] = out[i.date] || []).push(i); });
+    return out;
+  }
+  function dueRowHtml(i, withDate) {
+    const id = dueId(i), late = dueLate(i);
+    return `<div class="due-row${late ? " late" : ""}${DUE.busy[id] ? " busy" : ""}">
+      ${withDate ? `<div class="due-d">${esc(dueDay(i.date))}${late ? `<span>overdue</span>` : ""}</div>` : ""}
+      <div class="due-b"><div class="due-t"><i class="due-dot ${late ? "late" : i.status}"></i>${esc(i.title)}</div>
+        <div class="due-m"><button type="button" class="linkbtn" data-go="${esc(i.client)}">${esc(dueClient(i))}</button>${dueWsName(i) ? ` · ${esc(dueWsName(i))}` : ""} · ${esc(KIND[i.kind] || i.kind)} · ${esc(STATUS[i.status] || i.status)}</div></div>
+      ${state.canEdit ? `<button type="button" class="btn due-done" data-due-done="${esc(id)}"${DUE.busy[id] ? " disabled" : ""}>${DUE.busy[id] ? "Saving…" : "Done"}</button>` : ""}</div>`;
+  }
+  /* the to-do overview at the top of the Calendar page */
+  function dueBoard() {
+    const all = dueList(); if (!all.length && !DUE.err) return state.clientView ? "" : `<section class="due-board"><div class="section-head"><h2>To do</h2></div><div class="cal-empty">Nothing open with a due date. Planned and in-progress work items with a date show up here.</div></section>`;
+    const t = dueToday(), wk = calKey(calAdd(new Date(), 7)), two = calKey(calAdd(new Date(), 21));
+    const groups = [
+      ["late", "Overdue", all.filter(i => i.date < t)],
+      ["today", "Today", all.filter(i => i.date === t)],
+      ["week", "Next 7 days", all.filter(i => i.date > t && i.date <= wk)],
+      ["soon", "Following 2 weeks", all.filter(i => i.date > wk && i.date <= two)],
+      ["later", "Later", all.filter(i => i.date > two)]
+    ].filter(g => g[2].length);
+    const counts = groups.map(g => `<span class="due-c ${g[0]}">${g[2].length} ${g[1].toLowerCase()}</span>`).join("");
+    return `<section class="due-board"><div class="section-head"><h2>To do</h2><div class="due-counts">${counts}</div></div>
+      ${DUE.err ? `<div class="banner">${esc(DUE.err)}</div>` : ""}
+      <div class="due-groups">${groups.map(([k, label, list]) => k === "later"
+        ? `<details class="due-g later"${DUE.laterOpen ? " open" : ""}><summary><h3>${label}</h3><span class="due-n">${list.length}</span></summary><div class="due-list">${list.map(i => dueRowHtml(i, true)).join("")}</div></details>`
+        : `<div class="due-g ${k}"><h3>${label}<span class="due-n">${list.length}</span></h3><div class="due-list">${list.map(i => dueRowHtml(i, true)).join("")}</div></div>`).join("")}</div></section>`;
+  }
+  /* a "Due" strip under the day headers in the week view */
+  function dueWeekRow(days) {
+    const t = dueToday(), by = dueByDay(days[0], calAdd(days[days.length - 1], 1));
+    const late = dueList().filter(i => i.date < t).length;
+    if (!Object.keys(by).length && !late) return "";
+    return `<div class="cal-allday cal-due"><div class="cal-gut">Due</div>${days.map(d => { const k = calKey(d); return `<div>${k === t && late ? `<span class="cal-du late" title="Overdue items are listed in To do above">${late} overdue</span>` : ""}${(by[k] || []).map(i => `<button type="button" class="cal-du ${dueLate(i) ? "late" : i.status}" data-go="${esc(i.client)}" title="${esc(dueClient(i) + ": " + i.title)}"><b>${esc(dueClient(i))}</b> ${esc(i.title)}</button>`).join("")}</div>`; }).join("")}</div>`;
+  }
+  /* a due line in the List view */
+  const dueRow = i => `<div class="cal-row due-in-list${dueLate(i) ? " late" : ""}"><div class="cal-t"><span class="due-tag">Due</span></div><div class="cal-b"><div class="cal-ti">${esc(i.title)} <button type="button" class="cal-chip" data-go="${esc(i.client)}">${esc(dueClient(i))}</button></div><div class="cal-m">${esc([dueWsName(i), KIND[i.kind] || i.kind, STATUS[i.status] || i.status].filter(Boolean).join(" · "))}</div></div><div class="cal-a">${state.canEdit ? `<button type="button" class="linkbtn" data-due-done="${esc(dueId(i))}">Mark done</button>` : ""}</div></div>`;
+  /* one line on Home under Today's meetings */
+  function dueStripLine() {
+    const all = dueList(); if (!all.length) return "";
+    const t = dueToday(), today = all.filter(i => i.date === t), late = all.filter(i => i.date < t), wk = all.filter(i => i.date > t && i.date <= calKey(calAdd(new Date(), 7)));
+    const bits = [late.length ? `<b class="late">${late.length} overdue</b>` : "", today.length ? `<b>${today.length} due today</b>` : "", wk.length ? `${wk.length} due in the next 7 days` : ""].filter(Boolean);
+    return bits.length ? `<div class="due-strip"><span>To do: ${bits.join(" · ")}</span><button type="button" class="linkbtn" data-id-go="__calendar">Open to-do</button></div>` : "";
+  }
+  async function dueMarkDone(id) {
+    const it = state.items.find(i => dueId(i) === id); if (!it || DUE.busy[id]) return;
+    DUE.busy[id] = true; DUE.err = ""; renderMain();
+    try { const w = await dueSave(it); if (w) DUE.err = w; }
+    catch (e) { DUE.err = `Couldn't mark “${it.title}” done: ${(e && e.message) || e}`; }
+    delete DUE.busy[id]; renderMain();
+  }
+  document.addEventListener("click", e => {
+    const d = e.target.closest("[data-due-done]"); if (d) { e.preventDefault(); e.stopPropagation(); dueMarkDone(d.dataset.dueDone); return; }
+    const s = e.target.closest(".due-g.later > summary"); if (s) setTimeout(() => { DUE.laterOpen = !!s.parentElement.open; }, 0);
+  }, true);
   function renderCalendar() {
     const main = $("#main");
     if (!CAL.anchor) CAL.anchor = new Date();
@@ -1470,6 +1586,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
       </div><div class="cal-acts"><button type="button" class="btn" data-cal="refresh">Refresh</button>${state.clientView ? "" : `<button type="button" class="btn primary" data-cal-new>+ New event</button>`}</div></header>
       ${CAL.flash ? `<div class="banner cal-flash" role="status">${esc(CAL.flash)}</div>` : ""}
       ${CAL.loaded ? `<div class="stats cal-stats"><div class="stat"><div class="n">${weekEvents.length}</div><div class="l">meetings this week</div></div><div class="stat"><div class="n">${(weekEvents.reduce((s, e) => s + (e.e2 - e.s), 0) / 36e5).toFixed(1)}</div><div class="l">hours booked</div></div></div>` : ""}
+      ${dueBoard()}
       <div class="cal-bar"><div class="cal-nav"><button type="button" class="btn" data-cal="prev" aria-label="Previous week">‹</button><button type="button" class="btn" data-cal="today">Today</button><button type="button" class="btn" data-cal="next" aria-label="Next week">›</button><span class="cal-range">${esc(label)}</span></div>
         <div class="filters">${[["week", "Week"], ["agenda", "List"]].map(([k, l]) => `<button type="button" data-calview="${k}" aria-pressed="${CAL.view === k}">${l}</button>`).join("")}</div></div></div>
       <section class="section col-full">${body}</section>`;
@@ -1957,7 +2074,7 @@ input[role="switch"]:disabled{opacity:.5;cursor:default}
 </script>
 <script>
 (function () {
-  var BUILD = "e5cf73568d";
+  var BUILD = "9cf5d86e28";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
