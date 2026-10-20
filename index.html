@@ -534,6 +534,9 @@ button.cal-du.late{cursor:pointer}
 .due-strip b{color:var(--ink)}
 .due-strip b.late{color:var(--late)}
 @media (max-width:640px){.due-row{grid-template-columns:minmax(0,1fr) auto}.due-d{grid-column:1/-1;flex-direction:row;gap:8px}}
+.due-acts{display:flex;gap:6px}
+.due-edit{padding:4px 10px;font-size:13px}
+.cal-du.late{cursor:pointer}
 
 .tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .tfull:hover{text-decoration-thickness:2px}
@@ -664,6 +667,7 @@ button.cal-du.late{cursor:pointer}
       <label>Workstream<select id="f-ws"></select></label>
       <label>Status<select id="f-status"><option value="done">Done</option><option value="active">In progress</option><option value="planned">Planned</option><option value="void">Not executed</option></select></label>
     </div>
+    <label>Due date <small class="note">Optional. Open work with a due date shows in To do on the Calendar.</small><input id="f-due" type="date"></label>
     <label>Fulfils scope item<select id="f-scope"><option value="">None</option></select></label>
     <label>Details<textarea id="f-note" rows="3" maxlength="600"></textarea></label>
     <label>Files or links<input id="f-files" maxlength="300" placeholder="e.g. VP Advocacy Exec Summary.pdf"></label>
@@ -1500,42 +1504,44 @@ button.cal-du.late{cursor:pointer}
   }
   /* ---------- Due dates: open work items (Planned / In progress) with a date, shown as a to-do overview and on the calendar ---------- */
   async function dueSave(it) {
-    await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal });
+    await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal, due: it.due || "" });
     await load();
   }
   const DUE = { busy: {}, err: "", laterOpen: false };
   const dueToday = () => calKey(new Date());
+  /* the due date: the item's Due date when set, otherwise its date */
+  const dueKey = i => /^\d{4}-\d{2}-\d{2}$/.test(i.due || "") ? i.due : i.date;
   const dueList = () => state.clientView ? [] : state.items
-    .filter(i => (i.status === "planned" || i.status === "active") && /^\d{4}-\d{2}-\d{2}$/.test(i.date || "") && i.kind !== "invoice" && i.kind !== "contract")
-    .sort((a, b) => a.date.localeCompare(b.date) || String(a.title).localeCompare(String(b.title)));
+    .filter(i => (i.status === "planned" || i.status === "active") && /^\d{4}-\d{2}-\d{2}$/.test(dueKey(i) || "") && i.kind !== "invoice" && i.kind !== "contract")
+    .sort((a, b) => dueKey(a).localeCompare(dueKey(b)) || String(a.title).localeCompare(String(b.title)));
   const dueId = i => i._id || i.id;
   const dueClient = i => { const c = state.clients.find(x => x.id === i.client); return c ? (c.short || c.name) : i.client; };
   const dueWsName = i => { const c = state.clients.find(x => x.id === i.client); const w = c && (c.workstreams || []).find(z => z.id === i.ws); return w ? w.name : ""; };
-  const dueLate = i => i.date < dueToday();
+  const dueLate = i => dueKey(i) < dueToday();
   const dueDay = k => calDayLabel(calWhen(k));
   function dueByDay(from, to) {
     const a = calKey(from), b = calKey(to), out = {};
-    dueList().forEach(i => { if (i.date >= a && i.date < b) (out[i.date] = out[i.date] || []).push(i); });
+    dueList().forEach(i => { const k = dueKey(i); if (k >= a && k < b) (out[k] = out[k] || []).push(i); });
     return out;
   }
   function dueRowHtml(i, withDate) {
     const id = dueId(i), late = dueLate(i);
     return `<div class="due-row${late ? " late" : ""}${DUE.busy[id] ? " busy" : ""}">
-      ${withDate ? `<div class="due-d">${esc(dueDay(i.date))}${late ? `<span>overdue</span>` : ""}</div>` : ""}
+      ${withDate ? `<div class="due-d">${esc(dueDay(dueKey(i)))}${late ? `<span>overdue</span>` : ""}</div>` : ""}
       <div class="due-b"><div class="due-t"><i class="due-dot ${late ? "late" : i.status}"></i>${esc(i.title)}</div>
         <div class="due-m"><button type="button" class="linkbtn" data-go="${esc(i.client)}">${esc(dueClient(i))}</button>${dueWsName(i) ? ` · ${esc(dueWsName(i))}` : ""} · ${esc(KIND[i.kind] || i.kind)} · ${esc(STATUS[i.status] || i.status)}</div></div>
-      ${state.canEdit ? `<button type="button" class="btn due-done" data-due-done="${esc(id)}"${DUE.busy[id] ? " disabled" : ""}>${DUE.busy[id] ? "Saving…" : "Done"}</button>` : ""}</div>`;
+      ${state.canEdit ? `<div class="due-acts"><button type="button" class="btn due-edit" data-edit="${esc(id)}">Edit</button><button type="button" class="btn due-done" data-due-done="${esc(id)}"${DUE.busy[id] ? " disabled" : ""}>${DUE.busy[id] ? "Saving…" : "Done"}</button></div>` : ""}</div>`;
   }
   /* the to-do overview at the top of the Calendar page */
   function dueBoard() {
     const all = dueList(); if (!all.length && !DUE.err) return state.clientView ? "" : `<section class="due-board"><div class="section-head"><h2>To do</h2></div><div class="cal-empty">Nothing open with a due date. Planned and in-progress work items with a date show up here.</div></section>`;
     const t = dueToday(), wk = calKey(calAdd(new Date(), 7)), two = calKey(calAdd(new Date(), 21));
     const groups = [
-      ["late", "Overdue", all.filter(i => i.date < t)],
-      ["today", "Today", all.filter(i => i.date === t)],
-      ["week", "Next 7 days", all.filter(i => i.date > t && i.date <= wk)],
-      ["soon", "Following 2 weeks", all.filter(i => i.date > wk && i.date <= two)],
-      ["later", "Later", all.filter(i => i.date > two)]
+      ["late", "Overdue", all.filter(i => dueKey(i) < t)],
+      ["today", "Today", all.filter(i => dueKey(i) === t)],
+      ["week", "Next 7 days", all.filter(i => dueKey(i) > t && dueKey(i) <= wk)],
+      ["soon", "Following 2 weeks", all.filter(i => dueKey(i) > wk && dueKey(i) <= two)],
+      ["later", "Later", all.filter(i => dueKey(i) > two)]
     ].filter(g => g[2].length);
     const counts = groups.map(g => `<span class="due-c ${g[0]}">${g[2].length} ${g[1].toLowerCase()}</span>`).join("");
     return `<section class="due-board"><div class="section-head"><h2>To do</h2><div class="due-counts">${counts}</div></div>
@@ -1547,16 +1553,16 @@ button.cal-du.late{cursor:pointer}
   /* a "Due" strip under the day headers in the week view */
   function dueWeekRow(days) {
     const t = dueToday(), by = dueByDay(days[0], calAdd(days[days.length - 1], 1));
-    const late = dueList().filter(i => i.date < t).length;
+    const late = dueList().filter(i => dueKey(i) < t).length;
     if (!Object.keys(by).length && !late) return "";
-    return `<div class="cal-allday cal-due"><div class="cal-gut">Due</div>${days.map(d => { const k = calKey(d); return `<div>${k === t && late ? `<span class="cal-du late" title="Overdue items are listed in To do above">${late} overdue</span>` : ""}${(by[k] || []).map(i => `<button type="button" class="cal-du ${dueLate(i) ? "late" : i.status}" data-go="${esc(i.client)}" title="${esc(dueClient(i) + ": " + i.title)}"><b>${esc(dueClient(i))}</b> ${esc(i.title)}</button>`).join("")}</div>`; }).join("")}</div>`;
+    return `<div class="cal-allday cal-due"><div class="cal-gut">Due</div>${days.map(d => { const k = calKey(d); return `<div>${k === t && late ? `<span class="cal-du late" title="Overdue items are listed in To do above">${late} overdue</span>` : ""}${(by[k] || []).map(i => `<button type="button" class="cal-du ${dueLate(i) ? "late" : i.status}" data-edit="${esc(dueId(i))}" title="${esc(dueClient(i) + ": " + i.title)}"><b>${esc(dueClient(i))}</b> ${esc(i.title)}</button>`).join("")}</div>`; }).join("")}</div>`;
   }
   /* a due line in the List view */
-  const dueRow = i => `<div class="cal-row due-in-list${dueLate(i) ? " late" : ""}"><div class="cal-t"><span class="due-tag">Due</span></div><div class="cal-b"><div class="cal-ti">${esc(i.title)} <button type="button" class="cal-chip" data-go="${esc(i.client)}">${esc(dueClient(i))}</button></div><div class="cal-m">${esc([dueWsName(i), KIND[i.kind] || i.kind, STATUS[i.status] || i.status].filter(Boolean).join(" · "))}</div></div><div class="cal-a">${state.canEdit ? `<button type="button" class="linkbtn" data-due-done="${esc(dueId(i))}">Mark done</button>` : ""}</div></div>`;
+  const dueRow = i => `<div class="cal-row due-in-list${dueLate(i) ? " late" : ""}"><div class="cal-t"><span class="due-tag">Due</span></div><div class="cal-b"><div class="cal-ti">${esc(i.title)} <button type="button" class="cal-chip" data-go="${esc(i.client)}">${esc(dueClient(i))}</button></div><div class="cal-m">${esc([dueWsName(i), KIND[i.kind] || i.kind, STATUS[i.status] || i.status].filter(Boolean).join(" · "))}</div></div><div class="cal-a">${state.canEdit ? `<button type="button" class="linkbtn cal-editb" data-edit="${esc(dueId(i))}">Edit</button><button type="button" class="linkbtn" data-due-done="${esc(dueId(i))}">Mark done</button>` : ""}</div></div>`;
   /* one line on Home under Today's meetings */
   function dueStripLine() {
     const all = dueList(); if (!all.length) return "";
-    const t = dueToday(), today = all.filter(i => i.date === t), late = all.filter(i => i.date < t), wk = all.filter(i => i.date > t && i.date <= calKey(calAdd(new Date(), 7)));
+    const t = dueToday(), today = all.filter(i => dueKey(i) === t), late = all.filter(i => dueKey(i) < t), wk = all.filter(i => dueKey(i) > t && dueKey(i) <= calKey(calAdd(new Date(), 7)));
     const bits = [late.length ? `<b class="late">${late.length} overdue</b>` : "", today.length ? `<b>${today.length} due today</b>` : "", wk.length ? `${wk.length} due in the next 7 days` : ""].filter(Boolean);
     return bits.length ? `<div class="due-strip"><span>To do: ${bits.join(" · ")}</span><button type="button" class="linkbtn" data-id-go="__calendar">Open to-do</button></div>` : "";
   }
@@ -1827,7 +1833,7 @@ button.cal-du.late{cursor:pointer}
   function render(){ renderRail(); renderMain(); }
 
   function openItem(item) {
-    const c = state.clients.find(x => x.id === state.current); if (!c) return;
+    const c = state.clients.find(x => x.id === (item && item.client ? item.client : state.current)); if (!c) return;
     state.editing = item || null;
     $("#itemDlgTitle").textContent = item ? "Edit work" : "Add work";
     $("#f-ws").innerHTML = (c.workstreams||[]).map(w => `<option value="${esc(w.id)}">${esc(w.name)}</option>`).join("") || `<option value="general">General</option>`;
@@ -1841,6 +1847,7 @@ button.cal-du.late{cursor:pointer}
     $("#f-note").value = item?.note || "";
     $("#f-files").value = item?.files || "";
     $("#f-internal").checked = !!item?.internal;
+    $("#f-due").value = item?.due || "";
     $("#deleteItem").hidden = !item; $("#deleteItem").textContent = "Delete";
     $("#itemErr").hidden = true;
     $("#itemDlg").showModal();
@@ -1985,10 +1992,10 @@ button.cal-du.late{cursor:pointer}
     e.preventDefault();
     const body = {
       id: state.editing ? state.editing._id : null,
-      client: state.current, title: $("#f-title").value.trim(), date: $("#f-date").value,
+      client: state.editing ? state.editing.client : state.current, title: $("#f-title").value.trim(), date: $("#f-date").value,
       kind: $("#f-kind").value, ws: $("#f-ws").value, status: $("#f-status").value,
       scopeRef: $("#f-scope").value || "", note: $("#f-note").value.trim(), files: $("#f-files").value.trim(),
-      internal: $("#f-internal").checked
+      internal: $("#f-internal").checked, due: $("#f-due").value || ""
     };
     const btn = e.submitter; if (btn) btn.disabled = true;
     try { await gs("saveItem", body); $("#itemDlg").close(); await load(); }
@@ -2074,7 +2081,7 @@ button.cal-du.late{cursor:pointer}
 </script>
 <script>
 (function () {
-  var BUILD = "9cf5d86e28";
+  var BUILD = "98fdd5d257";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
