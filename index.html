@@ -693,6 +693,19 @@ button.cal-du.late{cursor:pointer}
 .cm-pick{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);max-width:220px}
 @media (max-width:560px){.cm-row{grid-template-columns:44px 1fr}.cm-ic{display:none}}
 
+/* ---------- collapsible sections ---------- */
+.cz-h{cursor:pointer;user-select:none;display:inline-flex;align-items:center;gap:8px;border-radius:6px}
+.cz-h:hover{color:var(--accent)}
+.cz-h:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.cz-h::after{content:"";flex:none;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);opacity:.55;transition:transform .15s ease}
+.cz-off .cz-h::after{transform:translateY(1px) rotate(-45deg)}
+.cz-off > :not(.section-head){display:none !important}
+.cz-off > .section-head{margin-bottom:0}
+.cz-bar{display:flex;justify-content:flex-end;gap:14px;margin:-6px 0 6px;font-size:13px}
+.cz-bar .linkbtn{color:var(--muted)}
+.cz-bar .linkbtn:hover{color:var(--accent)}
+@media print{.cz-bar{display:none}.cz-h::after{display:none}}
+
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.ok{background:#1d8a52}
 .hdot.watch{background:#d99a20}
@@ -2163,6 +2176,55 @@ button.cal-du.late{cursor:pointer}
     if (e.target.closest("[data-cm-more]")) { COMMS.show[id] = (COMMS.show[id] || 30) + 30; renderMain(); }
   });
 
+  /* ---------- Collapsible sections: every section heading toggles its section; choices remembered per browser ---------- */
+  (function () {
+    const KEY = "pulse.collapsed.v1";
+    const LONG = ["communications", "record of work", "recent activity", "everything we've done", "work delivered", "invoices", "open invoices", "by client"];
+    let st = {}; try { st = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { st = {}; }
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const keyOf = h => (h.textContent || "").replace(/\s+/g, " ").trim().toLowerCase().replace(/\d+/g, "#");
+    const shut = k => (k in st ? !!st[k] : LONG.includes(k));
+    let busy = false;
+    function heads(root) {
+      return [...(root || document).querySelectorAll(".section-head")].filter(hd => {
+        if (hd.closest("dialog,[role=dialog],.modal,.dlg")) return false;
+        const box = hd.parentElement, h = hd.querySelector("h2");
+        return box && h && box.children.length > 1;
+      });
+    }
+    function apply() {
+      if (busy) return; busy = true;
+      try {
+        const hs = heads();
+        hs.forEach(hd => {
+          const box = hd.parentElement, h = hd.querySelector("h2"), k = keyOf(h);
+          if (!h.classList.contains("cz-h")) { h.classList.add("cz-h"); h.setAttribute("role", "button"); h.tabIndex = 0; h.title = "Show or hide"; }
+          const off = shut(k);
+          if (box.classList.contains("cz-off") !== off) box.classList.toggle("cz-off", off);
+          if (h.getAttribute("aria-expanded") !== String(!off)) h.setAttribute("aria-expanded", String(!off));
+        });
+        const main = document.querySelector(".main");
+        if (main) {
+          let bar = main.querySelector(":scope > .cz-bar");
+          const inMain = hs.filter(hd => main.contains(hd));
+          if (inMain.length >= 2 && !bar) { bar = document.createElement("div"); bar.className = "cz-bar"; bar.innerHTML = `<button type="button" class="linkbtn" data-cz-all="1">Collapse all</button><button type="button" class="linkbtn" data-cz-all="0">Expand all</button>`; main.prepend(bar); }
+          else if (inMain.length < 2 && bar) bar.remove();
+        }
+      } finally { busy = false; }
+    }
+    function toggle(h) { const k = keyOf(h); st[k] = !shut(k); save(); apply(); }
+    document.addEventListener("click", e => {
+      const all = e.target.closest("[data-cz-all]");
+      if (all) { const off = all.dataset.czAll === "1", main = document.querySelector(".main"); heads(main).forEach(hd => { st[keyOf(hd.querySelector("h2"))] = off; }); save(); apply(); return; }
+      const h = e.target.closest(".cz-h"); if (h && !e.target.closest("a,button,input,select,label")) toggle(h);
+    });
+    document.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("cz-h")) { e.preventDefault(); toggle(e.target); }
+    });
+    new MutationObserver(() => apply()).observe(document.documentElement, { childList: true, subtree: true });
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply); else apply();
+  })();
+
   function renderCalendar() {
     const main = $("#main");
     if (!CAL.anchor) CAL.anchor = new Date();
@@ -3131,7 +3193,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "87dfca21b1";
+  var BUILD = "f6b5175b84";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
