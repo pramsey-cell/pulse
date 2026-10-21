@@ -690,6 +690,7 @@ button.cal-du.late{cursor:pointer}
 .cm-meta a{color:var(--accent)}
 .cm-row.mt .cm-s{color:var(--accent)}
 .cm-more{margin-top:8px}
+.cm-pick{font:inherit;font-size:13px;padding:5px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);max-width:220px}
 @media (max-width:560px){.cm-row{grid-template-columns:44px 1fr}.cm-ic{display:none}}
 
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
@@ -2145,11 +2146,16 @@ button.cal-du.late{cursor:pointer}
     }).join("");
     const chip = (attr, val, label, n, on) => `<button type="button" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)} <span>${n}</span></button>`;
     return `<section class="section cm"><div class="section-head"><h2>Communications</h2><span class="note">${nE} email thread${nE === 1 ? "" : "s"} and ${nM} meeting${nM === 1 ? "" : "s"} · updated hourly · internal only</span></div>
-      <div class="filters cm-f">${chip("data-cm-who", "", "Everyone", all.length, !who)}${Object.entries(people).sort((a, b) => b[1] - a[1]).map(([p, n]) => chip("data-cm-who", p, p, n, who === p)).join("")}
+      <div class="filters cm-f">${chip("data-cm-who", "", "Everyone", all.length, !who)}${(() => { const ps = Object.entries(people).sort((a, b) => b[1] - a[1]); const top = ps.slice(0, ps.length > 7 ? 5 : 7), rest = ps.slice(top.length); const sel = rest.find(([p]) => p === who);
+          return top.map(([p, n]) => chip("data-cm-who", p, p, n, who === p)).join("") + (rest.length ? `<select class="cm-pick" data-cm-pick aria-label="More people"><option value="">${sel ? "" : "More people (" + rest.length + ")…"}</option>${rest.map(([p, n]) => `<option value="${esc(p)}"${who === p ? " selected" : ""}>${esc(p)} (${n})</option>`).join("")}</select>` : ""); })()}
         <span class="cm-sep"></span>${chip("data-cm-type", "", "All", all.length, !type)}${chip("data-cm-type", "email", "Email", nE, type === "email")}${chip("data-cm-type", "meeting", "Meetings", nM, type === "meeting")}</div>
       ${list.length ? `<ul class="cm-list">${body}</ul>` : `<div class="empty">Nothing matches this filter.</div>`}
       ${list.length > show ? `<button type="button" class="linkbtn cm-more" data-cm-more>Show ${Math.min(30, list.length - show)} more of ${list.length - show}</button>` : ""}</section>`;
   }
+  document.addEventListener("change", e => {
+    const s = e.target.closest && e.target.closest("[data-cm-pick]"); const id = state.current; if (!s || !id || !COMMS.by[id]) return;
+    COMMS.who[id] = s.value; COMMS.show[id] = 30; renderMain();
+  });
   document.addEventListener("click", e => {
     const id = state.current; if (!id || !COMMS.by[id]) return;
     const w = e.target.closest("[data-cm-who]"); if (w) { COMMS.who[id] = w.dataset.cmWho; COMMS.show[id] = 30; renderMain(); return; }
@@ -3125,7 +3131,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "be83a5f9dc";
+  var BUILD = "87dfca21b1";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
