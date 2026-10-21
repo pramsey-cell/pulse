@@ -672,6 +672,26 @@ button.cal-du.late{cursor:pointer}
 @media (max-width:560px){.act-list li{grid-template-columns:auto 1fr}.act-t{grid-column:2}}
 @media (min-width:1400px){.main:has(.pp-board){overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding-bottom:28px}.main:has(.pp-board) .pp-board{margin-top:0}}
 
+/* ---------- communications log ---------- */
+.cm-f{flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.cm-f button span{color:var(--muted);font-weight:500;margin-left:2px}
+.cm-sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
+.cm-list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.cm-mo{padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-top:1px solid var(--line)}
+.cm-mo:first-child{border-top:0}
+.cm-row{display:grid;grid-template-columns:54px 22px 1fr;gap:8px;align-items:start;padding:10px 14px;border-top:1px solid var(--line)}
+.cm-mo+.cm-row{border-top:0}
+.cm-d{font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted);padding-top:1px}
+.cm-ic{font-size:14px;line-height:1.4;text-align:center;color:var(--muted)}
+.cm-b{min-width:0}
+.cm-s{font-weight:600;font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.cm-sum{font-size:13.5px;line-height:1.45;margin-top:2px}
+.cm-meta{font-size:12px;color:var(--muted);margin-top:3px}
+.cm-meta a{color:var(--accent)}
+.cm-row.mt .cm-s{color:var(--accent)}
+.cm-more{margin-top:8px}
+@media (max-width:560px){.cm-row{grid-template-columns:44px 1fr}.cm-ic{display:none}}
+
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.ok{background:#1d8a52}
 .hdot.watch{background:#d99a20}
@@ -1103,6 +1123,7 @@ button.cal-du.late{cursor:pointer}
         ${[...b.inv].sort((x,y)=>y.date.localeCompare(x.date) || String(y.num).localeCompare(String(x.num))).map(i => { const st = invStatus(i); return `<tr><td class="mono">${esc(i.date)}</td><td class="mono">${i.link ? `<a class="qb" href="${esc(i.link)}" target="_blank" rel="noopener" title="Open in QuickBooks">${esc(i.num)}</a>` : esc(i.num)}</td><td>${esc(i.desc)}</td><td>${esc(i.kind==="travel" ? "Travel" : ((c.workstreams||[]).find(w=>w.id===i.ws)?.name || "—"))}</td><td class="num">${money(i.amount)}</td><td class="num">${i.balance>0.005?money(i.balance):"—"}</td><td><span class="pill ${st[0]}">${esc(st[1])}</span></td></tr>`; }).join("")}
         </tbody></table></div>
       </section>` : ""}
+      ${commsSection(c)}
       </div>
 
       <section class="section col-right">
@@ -2090,6 +2111,52 @@ button.cal-du.late{cursor:pointer}
   }
   document.addEventListener("click", e => { if (e.target.closest("[data-act-more]")) { ACT.more = !ACT.more; renderMain(); } });
 
+  /* ---------- Communications log: emails and meetings with client contacts, newest first (internal; hidden in client view) ---------- */
+  const commsFetch = id => gs("getComms", id);
+  const COMMS = { by: {}, busy: {}, err: {}, who: {}, type: {}, show: {} };
+  async function commsLoad(id, force) {
+    if (!id || COMMS.busy[id] || (!force && COMMS.by[id])) return;
+    COMMS.busy[id] = true;
+    try { COMMS.by[id] = ((await commsFetch(id)) || []).filter(r => r && r.date); COMMS.err[id] = ""; }
+    catch (e) { COMMS.err[id] = `Couldn't load the communications log: ${(e && e.message) || e}`; if (!COMMS.by[id]) COMMS.by[id] = []; }
+    COMMS.busy[id] = false;
+    if (state.current === id) renderMain();
+  }
+  const cmMonth = d => { const [y, m] = String(d).split("-"); return MON[+m - 1] + " " + y; };
+  function commsSection(c) {
+    if (state.clientView || !c) return "";
+    const all = COMMS.by[c.id];
+    if (all === undefined) { setTimeout(() => commsLoad(c.id), 0); return `<section class="section cm"><div class="section-head"><h2>Communications</h2></div><div class="cal-m">Loading…</div></section>`; }
+    if (!all.length) return COMMS.err[c.id] ? `<section class="section cm"><div class="section-head"><h2>Communications</h2></div><div class="cal-m">${esc(COMMS.err[c.id])}</div></section>` : "";
+    const who = COMMS.who[c.id] || "", type = COMMS.type[c.id] || "";
+    const people = {}; all.forEach(r => { const k = r.contact || "Other"; people[k] = (people[k] || 0) + 1; });
+    const list = all.filter(r => (!who || (r.contact || "Other") === who) && (!type || r.type === type))
+      .sort((a, b) => (String(b.date) + (b.time || "")).localeCompare(String(a.date) + (a.time || "")));
+    const nE = all.filter(r => r.type === "email").length, nM = all.filter(r => r.type === "meeting").length;
+    const show = COMMS.show[c.id] || 30, rows = list.slice(0, show);
+    let lastMonth = "";
+    const body = rows.map(r => {
+      const mo = cmMonth(r.date), head = mo !== lastMonth ? `<li class="cm-mo">${esc(mo)}</li>` : ""; lastMonth = mo;
+      const meta = r.type === "meeting" ? ["Meeting", r.time].filter(Boolean).join(" · ")
+        : [r.dir === "sent" ? "Sent" : r.dir === "received" ? "Received" : "Email", +r.n > 1 ? `${r.n} messages` : "", r.last && r.last !== r.date ? `last ${fmtDay(r.last)}` : ""].filter(Boolean).join(" · ");
+      return `${head}<li class="cm-row ${r.type === "meeting" ? "mt" : "em"}"><span class="cm-d">${esc(fmtDay(r.date))}</span><span class="cm-ic" aria-hidden="true">${r.type === "meeting" ? "📅" : r.dir === "sent" ? "↗" : "✉"}</span>
+        <div class="cm-b"><div class="cm-s">${esc(r.subject || "(no subject)")}</div>${r.summary ? `<div class="cm-sum">${esc(r.summary)}</div>` : ""}
+        <div class="cm-meta">${esc(meta)}${!who && r.contact ? ` · ${esc(r.contact)}` : ""}${r.link ? ` · <a href="${esc(r.link)}" target="_blank" rel="noopener">${r.type === "meeting" ? "Open event" : "Open in Gmail"} ↗</a>` : ""}</div></div></li>`;
+    }).join("");
+    const chip = (attr, val, label, n, on) => `<button type="button" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)} <span>${n}</span></button>`;
+    return `<section class="section cm"><div class="section-head"><h2>Communications</h2><span class="note">${nE} email thread${nE === 1 ? "" : "s"} and ${nM} meeting${nM === 1 ? "" : "s"} · updated hourly · internal only</span></div>
+      <div class="filters cm-f">${chip("data-cm-who", "", "Everyone", all.length, !who)}${Object.entries(people).sort((a, b) => b[1] - a[1]).map(([p, n]) => chip("data-cm-who", p, p, n, who === p)).join("")}
+        <span class="cm-sep"></span>${chip("data-cm-type", "", "All", all.length, !type)}${chip("data-cm-type", "email", "Email", nE, type === "email")}${chip("data-cm-type", "meeting", "Meetings", nM, type === "meeting")}</div>
+      ${list.length ? `<ul class="cm-list">${body}</ul>` : `<div class="empty">Nothing matches this filter.</div>`}
+      ${list.length > show ? `<button type="button" class="linkbtn cm-more" data-cm-more>Show ${Math.min(30, list.length - show)} more of ${list.length - show}</button>` : ""}</section>`;
+  }
+  document.addEventListener("click", e => {
+    const id = state.current; if (!id || !COMMS.by[id]) return;
+    const w = e.target.closest("[data-cm-who]"); if (w) { COMMS.who[id] = w.dataset.cmWho; COMMS.show[id] = 30; renderMain(); return; }
+    const t = e.target.closest("[data-cm-type]"); if (t) { COMMS.type[id] = t.dataset.cmType; COMMS.show[id] = 30; renderMain(); return; }
+    if (e.target.closest("[data-cm-more]")) { COMMS.show[id] = (COMMS.show[id] || 30) + 30; renderMain(); }
+  });
+
   function renderCalendar() {
     const main = $("#main");
     if (!CAL.anchor) CAL.anchor = new Date();
@@ -3058,7 +3125,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "5b7fb3090c";
+  var BUILD = "be83a5f9dc";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
