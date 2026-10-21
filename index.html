@@ -677,6 +677,22 @@ button.cal-du.late{cursor:pointer}
 .pill.hl-watch{background:var(--warn-soft);color:var(--warn)}
 .tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .tfull:hover{text-decoration-thickness:2px}
+/* ---------- Talent: interviews on search cards ---------- */
+.iv{margin:12px 18px 4px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.iv-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:13.5px;margin-bottom:6px}
+.iv-h span{color:var(--muted);font-size:12.5px}
+.iv-list{list-style:none;margin:0;padding:0}
+.iv-row{display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:13.5px}
+.iv-row:first-child{border-top:0}
+.iv-when{font-variant-numeric:tabular-nums;white-space:nowrap}
+.iv-row.today .iv-when{font-weight:700;color:var(--accent)}
+.iv-who{min-width:0;overflow-wrap:anywhere;font-weight:600}
+.iv-round{display:block;font-weight:400;font-size:12px;color:var(--muted)}
+.iv-row.done{color:var(--muted)}.iv-row.done .iv-who{font-weight:500}
+.iv-join{font-size:12.5px;font-weight:600;color:#fff;background:var(--accent);border-radius:7px;padding:3px 10px;text-decoration:none}
+.iv-done{font-size:12px;color:var(--muted)}
+@media (max-width:560px){.iv-row{grid-template-columns:1fr auto}.iv-when{grid-column:1 / -1;font-size:12.5px;color:var(--muted)}.iv-row.today .iv-when{color:var(--accent)}}
+
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
 .tcard:not([open]) .tnote{display:none}
 @media (min-width:1400px){.col-full{grid-column:1 / -1;min-height:0;overflow-y:auto;padding-bottom:28px;padding-right:6px}}
@@ -1233,6 +1249,27 @@ button.cal-du.late{cursor:pointer}
       </section>`;
   }
 
+  /* ---------- Talent: Calendly interviews on each search card (copied in hourly by the Pulse sync) ---------- */
+  const TV_TZ = "America/New_York";
+  const tvDay = d => d.toLocaleDateString("en-US", { timeZone: TV_TZ, weekday: "short", month: "short", day: "numeric" });
+  const tvTime = d => d.toLocaleTimeString("en-US", { timeZone: TV_TZ, hour: "numeric", minute: "2-digit" });
+  const tvKey = d => d.toLocaleDateString("en-CA", { timeZone: TV_TZ });
+  function tvList(s) {
+    return (s.interviews || []).map(v => Object.assign({}, v, { d: new Date(v.start), e: new Date(v.end || v.start) }))
+      .filter(v => !isNaN(v.d) && !/cancel/i.test(v.status || ""));
+  }
+  function tvInterviews(s) {
+    if (state.clientView) return "";
+    const all = tvList(s); if (!all.length) return "";
+    const now = Date.now(), today = tvKey(new Date());
+    const up = all.filter(v => v.e.getTime() > now).sort((a, b) => a.d - b.d);
+    const past = all.filter(v => v.e.getTime() <= now && now - v.d.getTime() < 14 * 864e5).sort((a, b) => b.d - a.d);
+    if (!up.length && !past.length) return "";
+    const row = (v, done) => { const isToday = tvKey(v.d) === today;
+      return `<li class="iv-row${done ? " done" : ""}${isToday && !done ? " today" : ""}"><span class="iv-when">${isToday ? "Today" : esc(tvDay(v.d))} · ${esc(tvTime(v.d))}</span><span class="iv-who">${esc(v.name || v.email || "Candidate")}${v.round ? `<span class="iv-round">${esc(v.round)}</span>` : ""}</span>${!done && v.link ? `<a class="iv-join" href="${esc(v.link)}" target="_blank" rel="noopener">Join</a>` : done ? `<span class="iv-done">Held</span>` : ""}</li>`; };
+    return `<div class="iv"><div class="iv-h"><b>Interviews</b><span>${up.length ? `${up.length} upcoming` : "None booked ahead"}${past.length ? ` · ${past.length} in the last 14 days` : ""}</span></div>
+      <ul class="iv-list">${up.map(v => row(v, false)).join("")}${past.slice(0, 4).map(v => row(v, true)).join("")}</ul></div>`;
+  }
   function renderTalent() {
     const main = $("#main");
     const cName = id => { const c = state.clients.find(x => x.id === id); return c ? (c.short||c.name) : id; };
@@ -1254,6 +1291,7 @@ button.cal-du.late{cursor:pointer}
         <summary><div class="th">${cLogo(s.client)}<div><div class="tc"><button type="button" class="linkbtn" data-go="${esc(s.client)}">${esc(cName(s.client))}</button></div><h2>${esc(s.title)}</h2>
           <div class="tm">${esc(dates(s) || "Dates not set")}${s.applicants ? ` · ${esc(s.applicants)} applicant${+s.applicants === 1 ? "" : "s"} scored` : ""}${s.placed ? ` · Placed: <b>${esc(s.placed)}</b>` : ""}</div>${s.trackerUpdated ? `<div class="tu">Tracker last updated ${esc(fmtStamp(s.trackerUpdated))}</div>` : ""}${(() => { if (state.clientView) return ""; const m = String(s.source || "").match(/\((?:Google \w+ )?([-\w]{25,})\)/); const u = s.trackerUrl || (m ? "https://drive.google.com/open?id=" + m[1] : ""); return u ? `<a class="tfull" href="${esc(u)}" target="_blank" rel="noopener">${esc(s.trackerLabel || "Full Tracker")} ↗</a>` : ""; })()}${top.length ? `<div class="tv">Top ${top.length} applicant${top.length === 1 ? "" : "s"}</div>` : ""}</div>
           <span class="pill ${s.status === "Active" ? "active" : s.status === "Placed" ? "done" : "planned"}">${esc(s.status||"")}</span></div></summary>
+        ${tvInterviews(s)}
         ${top.length ? `<ol class="tlist">${top.map((t,i) => `<li><span class="rk">${esc(t.rank||i+1)}</span>
           <div style="min-width:0"><div class="tn">${esc(t.name)}${t.stage ? ` <span class="pill ${bandCls(t.stage)}">${esc(t.stage)}</span>` : ""}${t.resume && !state.clientView ? ` <a class="rsm" href="${esc(t.resume)}" target="_blank" rel="noopener">Resume</a>` : ""}</div>
             <div class="tr">${esc([t.role, t.org].filter(Boolean).join(" · "))}</div>${t.summary ? `<div class="ts">${esc(t.summary)}</div>` : ""}</div>
@@ -2902,7 +2940,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "8d366c7149";
+  var BUILD = "f1b9d0c205";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
