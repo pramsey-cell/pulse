@@ -611,6 +611,58 @@ button.cal-du.late{cursor:pointer}
 .mtg-x:hover{color:var(--ink)}
 .mtg-chip{background:var(--active-soft)}
 .mtg-otter{border:1px solid var(--line) !important;background:var(--surface) !important;border-radius:999px;font-size:12px !important;color:var(--accent) !important;padding:1px 8px !important;margin-left:6px}
+/* ---------- proposal pipeline ---------- */
+.cb.flag{background:#d99a20;color:#2b1d00}
+.pp-stats .stat.warn .n{color:#b7791f}
+.pp-board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;align-items:start;margin-top:18px}
+.pp-col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.pp-col-h{display:flex;align-items:baseline;gap:8px;padding:2px 4px 4px;border-bottom:2px solid var(--line)}
+.pp-col.st-sent .pp-col-h{border-color:#3b82c4}.pp-col.st-talks .pp-col-h{border-color:#8a63c9}.pp-col.st-contract .pp-col-h{border-color:#d99a20}.pp-col.st-won .pp-col-h{border-color:#1d8a52}
+.pp-col-h h3{margin:0;font:600 14px/1.3 var(--f-body)}
+.pp-n{font-size:12px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 7px}
+.pp-v{margin-left:auto;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pp-empty{font-size:13px;color:var(--muted);padding:6px 4px}
+.pp-card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 11px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.pp-card.nudge{border-color:#d99a20;box-shadow:inset 3px 0 0 #d99a20}
+.pp-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.pp-flag{font-size:11.5px;font-weight:600;color:#8a5a00;background:#fdf1d8;border-radius:10px;padding:1px 8px;white-space:nowrap}
+.pp-name{font-weight:600;font-size:14.5px;line-height:1.3;overflow-wrap:anywhere}
+.pp-fee{font-size:13px;font-variant-numeric:tabular-nums}
+.pp-meta{font-size:12.5px;color:var(--muted)}
+.pp-sum{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pp-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.pp-acts .btn{padding:4px 10px;font-size:13px}
+.pp-lost{margin-top:18px}
+.pp-lost>summary{cursor:pointer;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;list-style:none}
+.pp-lost>summary::before{content:"▸";color:var(--muted)}.pp-lost[open]>summary::before{content:"▾"}
+.pp-lost-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.pp-lost .pp-card{opacity:.8}
+#ppDlg{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+.pp-two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}.pp-two input,.pp-two select{min-width:0;width:100%;box-sizing:border-box}
+@media (max-width:1100px){.pp-board{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:700px){.pp-board{grid-template-columns:1fr}.pp-two{grid-template-columns:1fr!important}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pp-flag{background:#4a3505;color:#f6d38a}}
+:root[data-theme="dark"] .pp-flag{background:#4a3505;color:#f6d38a}
+/* ---------- activity feed ---------- */
+.act-box{margin-bottom:22px}
+.act-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.act-list li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.act-list li:last-child{border-bottom:0}
+.act-who{font-size:12px;font-weight:600;border-radius:10px;padding:1px 8px;background:var(--bg);border:1px solid var(--line);white-space:nowrap}
+.act-who[data-who="phil"]{background:#e3effa;border-color:#c4dcf2;color:#1d4f80}
+.act-who[data-who="victoria"]{background:#f3e8fb;border-color:#e0cdf0;color:#5b2d82}
+.act-who[data-who="pulse"]{background:#e6f4ec;border-color:#c5e5d2;color:#18603a}
+.act-what{min-width:0;overflow-wrap:anywhere}
+.act-what .cal-chip{margin-left:4px}
+.act-t{font-size:12px;color:var(--muted);white-space:nowrap}
+.act-more{margin-top:6px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .act-who[data-who="phil"]{background:#16324d;border-color:#24496d;color:#cfe3f7}:root:not([data-theme="light"]) .act-who[data-who="victoria"]{background:#36204a;border-color:#4e2f69;color:#ead8f7}:root:not([data-theme="light"]) .act-who[data-who="pulse"]{background:#173a27;border-color:#24563a;color:#cdebd8}}
+:root[data-theme="dark"] .act-who[data-who="phil"]{background:#16324d;border-color:#24496d;color:#cfe3f7}
+:root[data-theme="dark"] .act-who[data-who="victoria"]{background:#36204a;border-color:#4e2f69;color:#ead8f7}
+:root[data-theme="dark"] .act-who[data-who="pulse"]{background:#173a27;border-color:#24563a;color:#cdebd8}
+@media (max-width:560px){.act-list li{grid-template-columns:auto 1fr}.act-t{grid-column:2}}
+@media (min-width:1400px){.main:has(.pp-board){overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding-bottom:28px}.main:has(.pp-board) .pp-board{margin-top:0}}
+
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.ok{background:#1d8a52}
 .hdot.watch{background:#d99a20}
@@ -840,13 +892,13 @@ button.cal-du.late{cursor:pointer}
     const otherC = state.clients.filter(c => !isActive(c) && !isProsp(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
     const sorted = [...prospC, ...activeC, ...otherC];
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
-    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
+    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__pipeline" aria-current="${state.current==="__pipeline"}"><span>Pipeline</span>${(() => { const o = pipeOpenList(), f = o.filter(p => p.nudge).length; return o.length ? `<span class="cnts"><span class="cb prog" title="${o.length} open">${o.length}</span>${f ? `<span class="cb flag" title="${f} need a follow-up">${f}</span>` : ""}</span>` : ""; })()}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
     const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${healthDot(c)}${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
     const pL = prospC.filter(matchQ), aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
     $("#navList").innerHTML = ov; list.innerHTML = (pL.length ? grpLabel("Prospective") + pL.map(rowHtml).join("") : "") + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
-    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__calendar"${state.current==="__calendar"?" selected":""}>Calendar</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
-    { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __calendar: "Calendar", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
+    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__calendar"${state.current==="__calendar"?" selected":""}>Calendar</option><option value="__pipeline"${state.current==="__pipeline"?" selected":""}>Pipeline</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
+    { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __calendar: "Calendar", __pipeline: "Pipeline", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
     $("#clientViewBtn").setAttribute("aria-checked", String(state.clientView));
   }
 
@@ -862,7 +914,7 @@ button.cal-du.late{cursor:pointer}
 
   function renderMain() {
     const main = $("#main");
-    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent" || state.current === "__reports" || state.current === "__calendar") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else if (state.current === "__reports") renderReports(); else if (state.current === "__calendar") renderCalendar(); else renderOverview(); return; } }
+    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent" || state.current === "__reports" || state.current === "__calendar" || state.current === "__pipeline") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else if (state.current === "__reports") renderReports(); else if (state.current === "__calendar") renderCalendar(); else if (state.current === "__pipeline") renderPipeline(); else renderOverview(); return; } }
     const c = state.clients.find(x => x.id === state.current);
     if (!c) {
       main.innerHTML = state.clients.length
@@ -1109,6 +1161,7 @@ button.cal-du.late{cursor:pointer}
       <div class="lone"><h2 class="h">Total revenue</h2><div class="n">${money0(billed)}</div><div class="l">since ${dates.length ? esc(fmtMonth(dates[0])) : "—"}</div></div>${calStrip()}</div>
       <section class="section col-left">
         ${healthBox()}
+        ${actBox()}
         <div class="section-head"><h2>Upcoming payments</h2></div>
         ${up.length ? `<div class="plist">
           ${up.map(p => `<div class="prow" data-go="${esc(p.client)}" tabindex="0" role="button">
@@ -1552,7 +1605,7 @@ button.cal-du.late{cursor:pointer}
     else if (!CAL.loaded) body = `<div class="cal-empty">Loading your calendar…</div>`;
     else if (!today.length) body = `<div class="cal-empty">No more meetings today.${next ? ` Next: <b>${esc(calDayLabel(next.s))} ${esc(calTime(next.s))}</b>, ${esc(next.title)}` : ""}</div>`;
     else body = today.slice(0, 6).map(calRow).join("") + (today.length > 6 ? `<button type="button" class="linkbtn cal-more" data-id-go="__calendar">${today.length - 6} more today</button>` : "");
-    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div>${mtgLogBox()}${dueStripLine()}</section>`;
+    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div>${mtgLogBox()}${dueStripLine()}${pipeStripLine()}</section>`;
   }
   function calWeekGrid(ws) {
     const days = [...Array(7)].map((_, i) => calAdd(ws, i));
@@ -1591,7 +1644,7 @@ button.cal-du.late{cursor:pointer}
   }
   /* ---------- Due dates: open work items (Planned / In progress) with a date, shown as a to-do overview and on the calendar ---------- */
   async function dueSave(it) {
-    await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal, due: it.due || "" });
+    await gs("saveItem", { id: it._id, client: it.client, title: it.title, date: calKey(new Date()), kind: it.kind, ws: it.ws, status: "done", scopeRef: it.scopeRef || "", note: it.note || "", files: it.files || "", internal: !!it.internal, due: it.due || "" }, "done");
     await load();
   }
   const DUE = { busy: {}, err: "", fold: (() => { try { return JSON.parse(localStorage.getItem("pulse.todoFold") || "null") || { later: true }; } catch (e) { return { later: true }; } })() };
@@ -1772,6 +1825,224 @@ button.cal-du.late{cursor:pointer}
           <div class="pc" style="font-family:var(--f-body);font-size:13.5px">${h.issues.map(esc).join(" · ")}</div></div>`).join("")}</div>`
         : `<div class="empty">Every current client looks healthy: recent contact, nothing overdue, no late invoices.</div>`}</section>`;
   }
+  /* ---------- Proposal pipeline: engagements that are still being proposed, by stage ---------- */
+  /* the server saves the proposal, writes the Sheet and logs the activity */
+  async function pipeSave(b) { await gs("saveProposal", b); ACT.at = 0; await load(true); return ""; }
+  async function actFetch() { return await gs("getActivity", 60); }
+
+  const PIPE_STAGES = [["draft", "Drafting"], ["sent", "Sent"], ["talks", "In discussion"], ["contract", "Contract out"], ["won", "Won"], ["lost", "Lost"]];
+  const PIPE_LABEL = Object.fromEntries(PIPE_STAGES);
+  const PIPE_OPEN = ["draft", "sent", "talks", "contract"];
+  const PIPE_NUDGE = 10; /* days without a touch before a sent proposal needs a follow-up */
+  const PIPE = { busy: {}, flash: "", err: "", showLost: false };
+  const pipeCode = s => { s = String(s || "").trim().toLowerCase(); const hit = PIPE_STAGES.find(([k, l]) => k === s || l.toLowerCase() === s); return hit ? hit[0] : ""; };
+  const pipeDate = d => /^\d{4}-\d{2}-\d{2}/.test(String(d || "")) ? String(d).slice(0, 10) : "";
+  const pipeDays = d => d ? Math.floor((calWhen(calKey(new Date())) - calWhen(d)) / 864e5) : null;
+  const pipeBD = w => /proposals?\s*(&|and)\s*agreements/i.test(w.name || "");
+  /* the dollar figure in a fee note such as "$5,000 + travel (proposed)" or "$12.5k" */
+  function pipeValue(fee) {
+    const m = String(fee || "").match(/\$\s?([\d,]+(?:\.\d+)?)\s*(k\b)?/i);
+    if (!m) return 0;
+    const n = parseFloat(m[1].replace(/,/g, "")) || 0;
+    return m[2] ? n * 1000 : n;
+  }
+  /* every proposal: engagements with a stage, plus planned engagements that have a proposal on record */
+  function pipeList() {
+    if (state.clientView) return [];
+    const out = [];
+    state.clients.forEach(c => (c.workstreams || []).forEach(w => {
+      if (pipeBD(w)) return;
+      let stage = pipeCode(w.stage), sent = pipeDate(w.sent);
+      if (!stage) {
+        if (w.status !== "planned") return;
+        const props = state.items.filter(i => i.client === c.id && i.ws === w.id && i.kind === "proposal" && i.status === "done" && i.date).sort((a, b) => b.date.localeCompare(a.date));
+        if (!props.length) return;
+        const ct = state.items.find(i => i.client === c.id && i.ws === w.id && i.kind === "contract");
+        stage = ct ? (ct.contract && ct.contract.state === "executed" ? "won" : "contract") : "sent";
+        sent = sent || props[props.length - 1].date;
+      }
+      const touch = pipeDate(w.touch), last = [sent, touch].filter(Boolean).sort().pop() || "";
+      const quiet = PIPE_OPEN.includes(stage) && stage !== "draft" ? pipeDays(last) : null;
+      out.push({ c, w, key: c.id + "/" + w.id, stage, sent, touch, last, quiet, nudge: quiet !== null && quiet > PIPE_NUDGE, value: pipeValue(w.fee) });
+    }));
+    return out.sort((a, b) => (b.nudge - a.nudge) || (a.last || "9").localeCompare(b.last || "9") || String(a.w.name).localeCompare(String(b.w.name)));
+  }
+  /* won and lost stay on the board for a while after the decision */
+  const pipeRecent = p => { const d = pipeDays(p.touch || p.sent || p.w.start || ""); return d === null || d <= (p.stage === "won" ? 60 : 90); };
+  const pipeOpenList = () => pipeList().filter(p => PIPE_OPEN.includes(p.stage));
+  const pipeCName = c => c.short || c.name;
+  const pipeAgo = d => d === null ? "" : d <= 0 ? "today" : d === 1 ? "1 day ago" : `${d} days ago`;
+
+  function pipeCard(p) {
+    const can = state.canEdit && !state.clientView, busy = PIPE.busy[p.key];
+    const bits = [];
+    if (p.stage === "draft") bits.push(p.w.start ? `Planned for ${fmtDay(p.w.start)}` : "Not sent yet");
+    else if (p.sent) bits.push(`Sent ${fmtDay(p.sent)}`);
+    if (PIPE_OPEN.includes(p.stage) && p.touch && p.touch !== p.sent) bits.push(`last touch ${pipeAgo(pipeDays(p.touch))}`);
+    else if (p.quiet !== null && p.sent) bits.push(pipeAgo(p.quiet));
+    if ((p.stage === "won" || p.stage === "lost") && p.touch) bits.push(`${p.stage === "won" ? "won" : "closed"} ${fmtDay(p.touch)}`);
+    return `<div class="pp-card${p.nudge ? " nudge" : ""} st-${p.stage}">
+      <div class="pp-top"><button type="button" class="cal-chip" data-go="${esc(p.c.id)}">${esc(pipeCName(p.c))}</button>${p.nudge ? `<span class="pp-flag" title="No touch in ${p.quiet} days">Follow up</span>` : ""}</div>
+      <div class="pp-name">${esc(p.w.name)}</div>
+      ${p.w.fee ? `<div class="pp-fee">${esc(p.w.fee)}</div>` : ""}
+      ${bits.length ? `<div class="pp-meta">${esc(bits.join(" · "))}</div>` : ""}
+      ${p.w.summary ? `<div class="pp-sum">${esc(p.w.summary)}</div>` : ""}
+      ${can ? `<div class="pp-acts"><button type="button" class="btn" data-pp-edit="${esc(p.key)}">Edit</button>${PIPE_OPEN.includes(p.stage) && p.stage !== "draft" ? `<button type="button" class="btn" data-pp-touch="${esc(p.key)}"${busy ? " disabled" : ""}>${busy ? "Saving…" : "Followed up"}</button>` : ""}</div>` : ""}
+    </div>`;
+  }
+  function renderPipeline() {
+    const main = $("#main"), all = pipeList(), open = all.filter(p => PIPE_OPEN.includes(p.stage));
+    const won = all.filter(p => p.stage === "won" && pipeRecent(p)), lost = all.filter(p => p.stage === "lost" && pipeRecent(p));
+    const openVal = open.reduce((s, p) => s + p.value, 0), nudges = open.filter(p => p.nudge).length;
+    const cols = PIPE_STAGES.filter(([k]) => k !== "lost").map(([k, l]) => {
+      const list = k === "won" ? won : open.filter(p => p.stage === k);
+      const val = list.reduce((s, p) => s + p.value, 0);
+      return `<div class="pp-col st-${k}"><div class="pp-col-h"><h3>${l}</h3><span class="pp-n">${list.length}</span>${val ? `<span class="pp-v">${money0(val)}</span>` : ""}</div>
+        ${list.length ? list.map(pipeCard).join("") : `<div class="pp-empty">${k === "won" ? "Nothing won in the last 60 days" : "None"}</div>`}</div>`;
+    }).join("");
+    main.innerHTML = `<div class="top"><header class="head"><div style="min-width:0">
+        <h1>Pipeline</h1>
+        <p class="lede">Every proposal from first draft to signed. Sent proposals with no touch in ${PIPE_NUDGE} days are flagged for a follow-up. Values are the first dollar figure in each fee.</p>
+      </div>${state.canEdit && !state.clientView ? `<div class="cal-acts"><button type="button" class="btn primary" data-pp-new>+ New proposal</button></div>` : ""}</header>
+      ${PIPE.flash ? `<div class="banner cal-flash" role="status">${esc(PIPE.flash)}</div>` : ""}${PIPE.err ? `<div class="banner">${esc(PIPE.err)}</div>` : ""}
+      <div class="stats pp-stats"><div class="stat"><div class="n">${open.length}</div><div class="l">open proposals</div></div><div class="stat"><div class="n">${money0(openVal)}</div><div class="l">open value</div></div><div class="stat${nudges ? " warn" : ""}"><div class="n">${nudges}</div><div class="l">need a follow-up</div></div><div class="stat"><div class="n">${won.length}</div><div class="l">won, last 60 days</div></div></div></div>
+      <div class="pp-board">${cols}</div>
+      ${lost.length ? `<details class="pp-lost"${PIPE.showLost ? " open" : ""}><summary>Lost in the last 90 days <span class="pp-n">${lost.length}</span></summary><div class="pp-lost-list">${lost.map(pipeCard).join("")}</div></details>` : ""}`;
+  }
+  /* one line on Home */
+  function pipeStripLine() {
+    if (state.clientView) return "";
+    const open = pipeOpenList(); if (!open.length) return "";
+    const n = open.filter(p => p.nudge).length, v = open.reduce((s, p) => s + p.value, 0);
+    return `<div class="due-strip"><span>Pipeline: <b>${open.length} open</b>${v ? ` · ${money0(v)}` : ""}${n ? ` · <b class="late">${n} need${n === 1 ? "s" : ""} a follow-up</b>` : ""}</span><button type="button" class="linkbtn" data-id-go="__pipeline">Open pipeline</button></div>`;
+  }
+
+  /* ---- new / edit proposal form ---- */
+  function pipeDialog() {
+    let dlg = $("#ppDlg"); if (dlg) return dlg;
+    dlg = document.createElement("dialog"); dlg.id = "ppDlg";
+    dlg.innerHTML = `<form class="form nev" id="ppForm" novalidate>
+      <h2 id="ppHead">New proposal</h2>
+      <label>Client<select id="ppClient"></select></label>
+      <div id="ppNewBox" hidden class="nev-when pp-two">
+        <label>Organization name<input id="ppOrg" maxlength="120" autocomplete="off"></label>
+        <label>Short name<input id="ppOrgShort" maxlength="40" autocomplete="off" placeholder="Optional"></label>
+      </div>
+      <label>Proposal name<input id="ppName" required maxlength="160" autocomplete="off" placeholder="e.g. CEO Roadmapping Session"></label>
+      <div class="nev-when pp-two">
+        <label>Stage<select id="ppStage">${PIPE_STAGES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}</select></label>
+        <label>Fee<input id="ppFee" maxlength="200" autocomplete="off" placeholder="$5,000 + travel"></label>
+      </div>
+      <div class="nev-when pp-two">
+        <label>Date sent<input id="ppSent" type="date"></label>
+        <label>Planned start<input id="ppStart" type="date"></label>
+      </div>
+      <label>Summary<textarea id="ppSum" rows="3" maxlength="1000" placeholder="What it covers, who it's with, where it stands"></textarea></label>
+      <p class="note" id="ppStageNote"></p>
+      <p class="note nev-err" id="ppErr" hidden></p>
+      <div class="actions"><span class="note">Saved to Pulse and the Sheet.</span><span>
+        <button class="btn" type="button" id="ppCancel">Cancel</button>
+        <button class="btn primary" type="submit" id="ppSave">Save proposal</button></span></div>
+    </form>`;
+    document.body.appendChild(dlg);
+    const note = () => { const s = $("#ppStage").value; $("#ppStageNote").textContent = s === "won" ? "Won moves the engagement to In progress, so it shows as live work on the client page." : s === "lost" ? "Lost marks the engagement cancelled; it stays on the client page as not converted." : ""; };
+    $("#ppStage").addEventListener("change", () => { note(); if ($("#ppStage").value !== "draft" && !$("#ppSent").value && !PIPE.edit) $("#ppSent").value = calKey(new Date()); });
+    $("#ppClient").addEventListener("change", () => { const n = $("#ppClient").value === "__new"; $("#ppNewBox").hidden = !n; if (n) setTimeout(() => $("#ppOrg").focus(), 20); });
+    $("#ppCancel").addEventListener("click", () => dlg.close());
+    $("#ppForm").addEventListener("submit", pipeSubmit);
+    dlg._note = note;
+    return dlg;
+  }
+  function pipeOpen(key) {
+    const dlg = pipeDialog(), p = key ? pipeList().find(x => x.key === key) : null;
+    PIPE.edit = p || null;
+    const cl = [...state.clients].sort((a, b) => pipeCName(a).localeCompare(pipeCName(b)));
+    $("#ppClient").innerHTML = (p ? "" : `<option value="">Choose a client…</option><option value="__new">+ New organization</option>`) + cl.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+    $("#ppClient").disabled = !!p;
+    $("#ppHead").textContent = p ? "Edit proposal" : "New proposal";
+    $("#ppClient").value = p ? p.c.id : (state.clients.some(c => c.id === state.current) ? state.current : "");
+    $("#ppNewBox").hidden = true; $("#ppOrg").value = ""; $("#ppOrgShort").value = "";
+    $("#ppName").value = p ? p.w.name : ""; $("#ppStage").value = p ? p.stage : "draft";
+    $("#ppFee").value = p ? (p.w.fee || "") : ""; $("#ppSent").value = p ? p.sent : ""; $("#ppStart").value = p ? pipeDate(p.w.start) : "";
+    $("#ppSum").value = p ? (p.w.summary || "") : "";
+    $("#ppErr").hidden = true; $("#ppSave").disabled = false; $("#ppSave").textContent = "Save proposal";
+    dlg._note(); dlg.showModal(); setTimeout(() => (p ? $("#ppName") : $("#ppClient")).focus(), 30);
+  }
+  async function pipeSubmit(e) {
+    e.preventDefault();
+    const err = m => { $("#ppErr").textContent = m; $("#ppErr").hidden = false; };
+    const p = PIPE.edit, client = p ? p.c.id : $("#ppClient").value;
+    const body = { client: client === "__new" ? "" : client, ws: p ? p.w.id : "", name: $("#ppName").value.trim(), stage: $("#ppStage").value,
+      fee: $("#ppFee").value.trim(), sent: $("#ppSent").value, start: $("#ppStart").value, summary: $("#ppSum").value.trim() };
+    if (client === "__new") { const n = $("#ppOrg").value.trim(); if (!n) return err("Give the new organization a name."); body.newClient = { name: n, short: $("#ppOrgShort").value.trim() }; }
+    else if (!client) return err("Choose a client.");
+    if (!body.name) return err("Give the proposal a name.");
+    if (body.stage !== "draft" && !body.sent) body.sent = calKey(new Date());
+    $("#ppSave").disabled = true; $("#ppSave").textContent = "Saving…"; $("#ppErr").hidden = true;
+    try {
+      const w = await pipeSave(body, p);
+      $("#ppDlg").close();
+      PIPE.flash = (p ? `Saved “${body.name}”.` : `Added “${body.name}” to the pipeline.`) + (w ? " " + w : "");
+      setTimeout(() => { PIPE.flash = ""; if (state.current === "__pipeline") renderMain(); }, 10000);
+      renderMain();
+    } catch (x) { err(`Couldn't save: ${(x && x.message) || x}`); $("#ppSave").disabled = false; $("#ppSave").textContent = "Save proposal"; }
+  }
+  async function pipeTouch(key) {
+    const p = pipeList().find(x => x.key === key); if (!p || PIPE.busy[key]) return;
+    PIPE.busy[key] = true; PIPE.err = ""; renderMain();
+    try { const w = await pipeSave({ client: p.c.id, ws: p.w.id, name: p.w.name, stage: p.stage, fee: p.w.fee || "", sent: p.sent, start: pipeDate(p.w.start), summary: p.w.summary || "", followedUp: true }, p); PIPE.flash = `Logged a follow-up on “${p.w.name}”.` + (w ? " " + w : ""); }
+    catch (x) { PIPE.err = `Couldn't log the follow-up: ${(x && x.message) || x}`; }
+    delete PIPE.busy[key]; renderMain();
+    setTimeout(() => { PIPE.flash = ""; if (state.current === "__pipeline") renderMain(); }, 8000);
+  }
+  document.addEventListener("click", e => {
+    if (e.target.closest("[data-pp-new]")) { pipeOpen(""); return; }
+    const ed = e.target.closest("[data-pp-edit]"); if (ed) { pipeOpen(ed.dataset.ppEdit); return; }
+    const t = e.target.closest("[data-pp-touch]"); if (t) { pipeTouch(t.dataset.ppTouch); return; }
+    const l = e.target.closest(".pp-lost > summary"); if (l) setTimeout(() => { PIPE.showLost = l.parentElement.open; }, 0);
+  });
+
+  /* ---------- Activity feed: who changed what, from the Sheet's Activity tab ---------- */
+  const ACT = { rows: null, at: 0, busy: false, err: "", more: false };
+  const actWhen = s => { const m = String(s || "").match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/); return m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]) : null; };
+  function actAgo(s) {
+    const d = actWhen(s); if (!d) return String(s || "");
+    const min = Math.round((Date.now() - d) / 6e4);
+    if (min < 1) return "just now"; if (min < 60) return `${min} min ago`;
+    const h = Math.round(min / 60); if (h < 24 && calKey(d) === calKey(new Date())) return `${h} hr ago`;
+    const days = pipeDays(calKey(d));
+    return days === 1 ? `yesterday, ${calTime(d)}` : days < 7 ? `${d.toLocaleDateString("en-US", { weekday: "short" })} ${calTime(d)}` : fmtDay(calKey(d)) + (d.getFullYear() !== new Date().getFullYear() ? " " + d.getFullYear() : "");
+  }
+  async function actLoad(force) {
+    if (ACT.busy || state.clientView) return;
+    if (!force && ACT.rows && Date.now() - ACT.at < 120000) return;
+    ACT.busy = true;
+    try { ACT.rows = (await actFetch()) || []; ACT.err = ""; }
+    catch (e) { ACT.err = `Couldn't load activity: ${(e && e.message) || e}`; if (!ACT.rows) ACT.rows = []; }
+    ACT.at = Date.now(); ACT.busy = false;
+    if (state.current === "__home") renderMain();
+  }
+  /* show a change right away, before the Sheet is read again */
+  function actLocal(who, action, client, detail) {
+    const t = new Date(), p = n => String(n).padStart(2, "0");
+    const when = `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}T${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+    if (ACT.rows) ACT.rows.unshift({ when, who, action, client, detail });
+    return when;
+  }
+  function actBox() {
+    if (state.clientView) return "";
+    if (!ACT.rows) { setTimeout(() => actLoad(), 0); return `<section class="section act-box"><div class="section-head"><h2>Recent activity</h2></div><div class="cal-m">Loading…</div></section>`; }
+    if (Date.now() - ACT.at > 120000) setTimeout(() => actLoad(), 0);
+    const rows = ACT.rows.slice(0, ACT.more ? 40 : 10);
+    const cName = id => { const c = state.clients.find(x => x.id === id); return c ? pipeCName(c) : ""; };
+    return `<section class="section act-box"><div class="section-head"><h2>Recent activity</h2><span class="note">Changes made in Pulse, Heartbeat and the hourly sync</span></div>
+      ${ACT.err ? `<div class="cal-m">${esc(ACT.err)}</div>` : ""}
+      ${rows.length ? `<ul class="act-list">${rows.map(r => `<li><span class="act-who" data-who="${esc(String(r.who || "").toLowerCase().split(" ")[0])}">${esc(String(r.who || "Someone").split(" ")[0])}</span><span class="act-what">${esc(r.action)}${r.detail ? ` <b>${esc(r.detail)}</b>` : ""}${cName(r.client) ? ` <button type="button" class="cal-chip" data-go="${esc(r.client)}">${esc(cName(r.client))}</button>` : ""}</span><span class="act-t" title="${esc(r.when)}">${esc(actAgo(r.when))}</span></li>`).join("")}</ul>`
+        : `<div class="empty">Nothing yet. Edits you make in Pulse show up here with who made them.</div>`}
+      ${ACT.rows.length > 10 ? `<button type="button" class="linkbtn act-more" data-act-more>${ACT.more ? "Show less" : "Show more"}</button>` : ""}</section>`;
+  }
+  document.addEventListener("click", e => { if (e.target.closest("[data-act-more]")) { ACT.more = !ACT.more; renderMain(); } });
+
   function renderCalendar() {
     const main = $("#main");
     if (!CAL.anchor) CAL.anchor = new Date();
@@ -2498,7 +2769,7 @@ Rules:
     d = Object.assign({}, d, { clients: (d.clients || []).map(c => { const x = Object.assign({}, c); if (x.logoId && logoCache[x.logoId]) x.logo = logoCache[x.logoId]; return x; }) });
     setTimeout(fetchLogos_, 0);
     state.clients = d.clients; state.items = d.items; state.invoices = d.invoices || []; state.overrides = d.overrides || []; state.searches = d.searches || []; state.canEdit = d.canEdit;
-    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && state.current !== "__calendar" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
+    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && state.current !== "__calendar" && state.current !== "__pipeline" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
     render();
   }
 
@@ -2611,7 +2882,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "0771799b83";
+  var BUILD = "d0eb656871";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
