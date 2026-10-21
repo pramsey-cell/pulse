@@ -611,6 +611,18 @@ button.cal-du.late{cursor:pointer}
 .mtg-x:hover{color:var(--ink)}
 .mtg-chip{background:var(--active-soft)}
 .mtg-otter{border:1px solid var(--line) !important;background:var(--surface) !important;border-radius:999px;font-size:12px !important;color:var(--accent) !important;padding:1px 8px !important;margin-left:6px}
+.hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
+.hdot.ok{background:#1d8a52}
+.hdot.watch{background:#d99a20}
+.hdot.alert{background:var(--late)}
+.hpill{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;font:600 12px/1.4 var(--f-body);color:var(--muted)}
+.hpill.alert{color:var(--late)}
+.hpill.watch{color:var(--warn)}
+.hpill.ok{color:#1d7a4f}
+.hpill span{font-weight:400;color:var(--muted)}
+.health-box .prow{grid-template-columns:minmax(0,1fr)}
+.health-box .pn{align-items:center}
+.pill.hl-watch{background:var(--warn-soft);color:var(--warn)}
 .tfull{display:inline-block;margin-top:6px;font-size:13px;font-weight:600;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .tfull:hover{text-decoration-thickness:2px}
 .tnote{font-size:13px;color:var(--muted);padding:12px 18px;border-top:1px solid var(--line)}
@@ -830,7 +842,7 @@ button.cal-du.late{cursor:pointer}
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
     const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
-    const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
+    const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${healthDot(c)}${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
     const pL = prospC.filter(matchQ), aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
     $("#navList").innerHTML = ov; list.innerHTML = (pL.length ? grpLabel("Prospective") + pL.map(rowHtml).join("") : "") + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
     pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__calendar"${state.current==="__calendar"?" selected":""}>Calendar</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
@@ -1096,6 +1108,7 @@ button.cal-du.late{cursor:pointer}
       </div>
       <div class="lone"><h2 class="h">Total revenue</h2><div class="n">${money0(billed)}</div><div class="l">since ${dates.length ? esc(fmtMonth(dates[0])) : "—"}</div></div>${calStrip()}</div>
       <section class="section col-left">
+        ${healthBox()}
         <div class="section-head"><h2>Upcoming payments</h2></div>
         ${up.length ? `<div class="plist">
           ${up.map(p => `<div class="prow" data-go="${esc(p.client)}" tabindex="0" role="button">
@@ -1114,6 +1127,7 @@ button.cal-du.late{cursor:pointer}
             <div class="hl">${c.logo ? `<img class="${c.logoDark ? "dark" : ""}" src="${esc(c.logo)}" alt="${esc(c.name)} logo">` : `<span class="hn">${esc(c.short||c.name)}</span>`}</div>
             ${c.logo ? `<div class="hn" style="font-size:15px">${esc(c.short||c.name)}</div>` : ""}
             <div class="hm">${money0(y)} billed in ${cy}${owed ? ` · ${money0(owed)} upcoming` : ""}${open ? ` · ${open} in progress` : ""}</div>
+            ${healthPill(c)}
             <div class="hw">${last ? `Latest: <b>${esc(last.title)}</b> · ${esc(fmtDay(last.date))}` : "No work logged yet"}</div>
           </button>`).join("")}
         </div>
@@ -1700,6 +1714,64 @@ button.cal-du.late{cursor:pointer}
     if (e.target.closest("[data-mtg-unmeet]")) { CH.meeting = null; chatFilesDraw(); return; }
     if (e.target.closest("[data-mtg-otter]") && CH.meeting && !MTG.otterBusy) mtgOtter(CH.meeting);
   });
+  /* ---------- Client health: last contact, overdue work, late invoices and quiet searches, rolled into green / amber / red ---------- */
+  const HEALTH_LABEL = ["Healthy", "Watch", "Needs attention"];
+  function clientHealth(c) {
+    if (!c || state.clientView) return null;
+    const today = calKey(new Date()), now = Date.now(), day = 864e5;
+    const its = state.items.filter(i => i.client === c.id && i.kind !== "invoice" && i.kind !== "contract");
+    const srch = state.searches.filter(s => s.client === c.id && s.status === "Active");
+    const current = /^(active|prospective)$/i.test(c.stage || "") || its.some(i => i.status === "active" || i.status === "planned") || srch.length;
+    if (!current) return null;
+    const issues = [];
+    /* last contact: latest done work item, or a client meeting on the calendar that has already happened */
+    let last = its.filter(i => i.status === "done" && i.date && i.date <= today).map(i => i.date).sort().pop() || "";
+    if (typeof CAL !== "undefined" && CAL.loaded) CAL.events.forEach(e => { if (e.client && e.client.id === c.id && e.e2 && e.e2.getTime() < now) { const k = calKey(e.s); if (k > last) last = k; } });
+    const since = last ? Math.floor((calWhen(today) - calWhen(last)) / day) : null;
+    if (since === null) issues.push([1, "No contact logged yet"]);
+    else if (since > 45) issues.push([2, `No contact in ${since} days`]);
+    else if (since > 21) issues.push([1, `No contact in ${since} days`]);
+    /* overdue work */
+    const late = its.filter(i => (i.status === "planned" || i.status === "active") && /^\d{4}-\d{2}-\d{2}$/.test(dueKey(i) || "") && dueKey(i) < today);
+    if (late.length) {
+      const worst = Math.max(...late.map(i => Math.floor((calWhen(today) - calWhen(dueKey(i))) / day)));
+      issues.push([worst > 14 ? 2 : 1, `${late.length} overdue item${late.length === 1 ? "" : "s"}${worst > 1 ? ` (up to ${worst} days)` : ""}`]);
+    }
+    /* invoices past due */
+    const lateInv = state.invoices.filter(i => i.client === c.id && /late/.test(invStatus(i).join(" ")));
+    if (lateInv.length) {
+      const days = Math.max(...lateInv.map(i => Math.floor((now - new Date((i.due || i.date) + "T12:00:00")) / day)));
+      issues.push([days > 60 ? 2 : 1, `${lateInv.length === 1 ? "Invoice " + (lateInv[0].num || "") : lateInv.length + " invoices"} ${days} days past due`.replace("  ", " ")]);
+    }
+    /* searches whose tracker has gone quiet */
+    srch.forEach(s => {
+      if (!s.trackerUpdated) return;
+      const d = Math.floor((now - new Date(String(s.trackerUpdated).slice(0, 10) + "T12:00:00")) / day);
+      if (d > 14) issues.push([1, `${s.title} tracker quiet for ${d} days`]);
+    });
+    const level = issues.reduce((m, x) => Math.max(m, x[0]), 0);
+    return { level, label: HEALTH_LABEL[level], issues: issues.sort((a, b) => b[0] - a[0]).map(x => x[1]), since, last };
+  }
+  const healthCls = l => ["ok", "watch", "alert"][l] || "ok";
+  function healthDot(c) {
+    const h = clientHealth(c); if (!h) return "";
+    return `<i class="hdot ${healthCls(h.level)}" title="${esc(h.label + (h.issues.length ? ": " + h.issues.join("; ") : ""))}"></i>`;
+  }
+  function healthPill(c) {
+    const h = clientHealth(c); if (!h) return "";
+    return `<div class="hpill ${healthCls(h.level)}"><i class="hdot ${healthCls(h.level)}"></i>${esc(h.label)}${h.issues.length ? `<span>${esc(h.issues[0])}</span>` : h.since !== null ? `<span>Last contact ${h.since === 0 ? "today" : h.since + " day" + (h.since === 1 ? "" : "s") + " ago"}</span>` : ""}</div>`;
+  }
+  /* the "Needs attention" list on Home */
+  function healthBox() {
+    if (state.clientView) return "";
+    const rows = state.clients.map(c => ({ c, h: clientHealth(c) })).filter(r => r.h && r.h.level > 0).sort((a, b) => b.h.level - a.h.level || a.c.name.localeCompare(b.c.name));
+    const tracked = state.clients.filter(c => clientHealth(c)).length;
+    return `<section class="section health-box"><div class="section-head"><h2>Needs attention</h2><span class="note">${tracked} current client${tracked === 1 ? "" : "s"} checked: last contact, overdue work, late invoices, quiet searches</span></div>
+      ${rows.length ? `<div class="plist">${rows.map(({ c, h }) => `<div class="prow" data-go="${esc(c.id)}" tabindex="0" role="button">
+          <div class="pn"><i class="hdot ${healthCls(h.level)}"></i>${esc(c.short || c.name)} <span class="pill ${h.level === 2 ? "late" : "planned"} hl-${healthCls(h.level)}">${esc(h.label)}</span></div>
+          <div class="pc" style="font-family:var(--f-body);font-size:13.5px">${h.issues.map(esc).join(" · ")}</div></div>`).join("")}</div>`
+        : `<div class="empty">Every current client looks healthy: recent contact, nothing overdue, no late invoices.</div>`}</section>`;
+  }
   function renderCalendar() {
     const main = $("#main");
     if (!CAL.anchor) CAL.anchor = new Date();
@@ -2539,7 +2611,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "55ffc6f23e";
+  var BUILD = "0771799b83";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
