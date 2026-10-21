@@ -2428,7 +2428,7 @@ button.cal-du.late{cursor:pointer}
   function chatContext() {
     const today = chatDay();
     const clients = state.clients.map(c => ({ id: c.id, name: c.name, short: c.short || "", stage: c.stage || "",
-      engagements: (c.workstreams || []).map(w => ({ id: w.id, name: w.name, status: w.status || "", start: w.start || "", end: w.end || "" })),
+      engagements: (c.workstreams || []).map(w => ({ id: w.id, name: w.name, status: w.status || "", start: w.start || "", end: w.end || "", fee: w.fee || "" })),
       contacts: (c.contacts || []).filter(p => p.email).map(p => `${p.name} <${p.email}>`) }));
     const items = state.items.filter(i => i.kind !== "invoice" && i.kind !== "contract")
       .map(i => [i._id, i.client, i.ws || "", i.date, i.due || "", i.kind, i.status, i.title].join(" | "));
@@ -2444,6 +2444,9 @@ ${JSON.stringify(clients)}
 WORK ITEMS (id | client | ws | date | due | kind | status | title):
 ${items.join("\n")}
 
+PROPOSAL PIPELINE (client | ws | proposal | stage | sent | last touch | fee | summary):
+${pipeList().map(p => [p.c.id, p.w.id, p.w.name, p.stage, p.sent || "", p.touch || "", p.w.fee || "", String(p.w.summary || "").slice(0, 160)].join(" | ")).join("\n") || "(none)"}
+
 SEARCHES:
 ${JSON.stringify(searches)}
 
@@ -2458,6 +2461,7 @@ Reply with ONLY one JSON object: {"reply": string, "changes": [ ... ]}
   {"type":"add_item","client":id,"ws":engagementId,"date":"YYYY-MM-DD","due":"YYYY-MM-DD or empty","kind":"meeting|deliverable|milestone|proposal","status":"done|active|planned|void","title":string,"note":string,"internal":bool}
   {"type":"update_item","id":itemId,"set":{ any of "status","date","due","title","note","ws","internal" }}
   {"type":"update_engagement","client":id,"ws":engagementId,"set":{ any of "status" ("done|active|planned"), "end" ("YYYY-MM-DD"), "summary" }}
+  {"type":"save_proposal","client":id or "new","newClient":{"name":string,"short":string} (only when client is "new"),"ws":engagementId of an existing proposal or engagement, or "" for a new one,"name":string,"stage":"draft|sent|talks|contract|won|lost","fee":string,"sent":"YYYY-MM-DD or empty","start":"YYYY-MM-DD or empty","summary":string,"followedUp":true|false}
   {"type":"update_search","id":searchId,"set":{ any of "status" ("Active|Placed|Closed"), "closed" ("YYYY-MM-DD"), "placed" (name), "applicants" (number), "note" }}
   {"type":"add_event","title":string,"date":"YYYY-MM-DD","start":"HH:MM","end":"HH:MM","tz":IANA zone (default "America/New_York"),"zoom":"phil|victoria|none","guests":[emails],"description":string}
   {"type":"update_event","id":eventId, then any of "title","date","start","end","tz","zoom","guests","description"}
@@ -2469,7 +2473,8 @@ Rules:
 - Default dates to TODAY when he says "today" or gives no date for something that just happened. Resolve weekdays to the next such date.
 - "my Zoom" means zoom "phil"; "Victoria's Zoom" means "victoria". Default zoom for new meetings is "phil" unless he says otherwise. Use contact emails from the data for guests when he names a client contact; never invent an email (ask instead).
 - Only "editable" calendar events can be updated or deleted.
-- Never touch money: no invoices, contracts, fees, payments, amounts or revenue. If asked, say that has to be done in QuickBooks or the Sheet and return no change for it.
+- Proposals live in PROPOSAL PIPELINE; stages: draft (being written), sent, talks (in discussion), contract (contract out for signature), won, lost. "Sent Huntsville the board proposal" is save_proposal with stage "sent" and sent TODAY. "Followed up with LVR on the economy proposal" is save_proposal for that proposal with its current stage and followedUp true. Signed/accepted is stage "won"; declined/went elsewhere is stage "lost". When changing an existing proposal, pass its ws and copy its current name, fee, summary, sent and start from the data, changing only what he said. A brand-new proposal uses ws "". For an organization not in CLIENTS use client "new" with newClient (ask first if the name is unclear). To put an existing engagement that is not on the board yet into the pipeline, use save_proposal with its ws. Do not also add a work item for the same proposal unless he asks.
+- Never touch money: no invoices, contracts, payments, amounts or revenue (the quoted fee text on a save_proposal is fine). If asked, say that has to be done in QuickBooks or the Sheet and return no change for it.
 - Keep titles short and specific, in the style of the existing items. Put extra detail in "note".
 - If he only asks a question, answer it from the data in "reply" with "changes": [].
 - In "reply", refer to work by its title and client name and to dates as "Mon D" (e.g. "Oct 23"); never show internal ids such as "car-100" or "hgar-017".
@@ -2483,12 +2488,24 @@ Rules:
       case "add_item": return `<b>Add</b> ${esc(KIND_LABEL[c.kind] || c.kind)} · ${esc(cl(c.client))} · ${esc(ws(c.client, c.ws))}<br>“${esc(c.title)}” · ${esc(c.date)} · ${esc(STATUS_LABEL[c.status] || c.status)}${c.due ? ` · due ${esc(c.due)}` : ""}${c.note ? `<br><span class="chat-note">${esc(c.note)}</span>` : ""}${c.internal ? " · internal only" : ""}`;
       case "update_item": { const it = item(c.id); return `<b>Update</b> ${esc(it ? cl(it.client) + ": “" + it.title + "”" : c.id)}<br>${esc(fmtSet(c.set))}`; }
       case "update_engagement": return `<b>Update engagement</b> ${esc(cl(c.client))} · ${esc(ws(c.client, c.ws))}<br>${esc(fmtSet(c.set))}`;
+      case "save_proposal": { const nm = c.client === "new" ? ((c.newClient || {}).name || "New organization") : cl(c.client); const ex = c.ws ? pipeList().find(p => p.key === c.client + "/" + c.ws) : null; const b = chatPropBody(c); return `<b>${c.followedUp ? "Log follow-up" : c.ws ? "Update proposal" : "New proposal"}</b> ${esc(nm)}${c.client === "new" ? " (new client)" : ""}<br>“${esc(b.name)}” · ${esc(PIPE_LABEL[b.stage] || b.stage)}${b.sent ? ` · sent ${esc(fmtDay(b.sent))}` : ""}${b.fee ? ` · ${esc(b.fee)}` : ""}${ex && ex.stage !== b.stage ? ` <span class="chat-note">(was ${esc(PIPE_LABEL[ex.stage] || ex.stage)})</span>` : ""}${c.summary ? `<br><span class="chat-note">${esc(c.summary)}</span>` : ""}`; }
       case "update_search": { const s = state.searches.find(x => x.id === c.id); return `<b>Update search</b> ${esc(s ? cl(s.client) + " · " + s.title : c.id)}<br>${esc(fmtSet(c.set))}`; }
       case "add_event": return `<b>Add to calendar</b> “${esc(c.title)}”<br>${esc(c.date)} ${esc(c.start)}–${esc(c.end)} ${esc((CAL_TZ.find(z => z[0] === (c.tz || "America/New_York")) || [0, c.tz])[1])} · ${esc(c.zoom === "victoria" ? "Victoria's Zoom" : c.zoom === "none" ? "No link" : "Phil's Zoom")}${(c.guests || []).length ? `<br>Guests: ${esc(c.guests.join(", "))}` : ""}`;
       case "update_event": { const ev = CAL.events.find(e => e.id === c.id); const { type, id, ...rest } = c; return `<b>Change event</b> “${esc(ev ? ev.title : c.id)}”<br>${esc(fmtSet(rest))}`; }
       case "delete_event": { const ev = CAL.events.find(e => e.id === c.id); return `<b>Delete event</b> “${esc(ev ? ev.title + " · " + calDayLabel(ev.s) + " " + calTime(ev.s) : c.id)}”`; }
       default: return esc(JSON.stringify(c));
     }
+  }
+  /* a Heartbeat save_proposal change, filled in from the proposal as it stands */
+  function chatPropBody(c) {
+    const cl = state.clients.find(x => x.id === c.client), w0 = c.ws && cl ? (cl.workstreams || []).find(z => z.id === c.ws) : null;
+    const ex = c.ws ? pipeList().find(p => p.key === c.client + "/" + c.ws) : null;
+    const b = { client: c.client === "new" ? "" : c.client, ws: c.ws || "", name: String(c.name || (w0 && w0.name) || "").trim().slice(0, 160), stage: c.stage,
+      fee: c.fee !== undefined ? String(c.fee) : (w0 ? w0.fee || "" : ""), sent: c.sent !== undefined ? String(c.sent) : (ex ? ex.sent : ""),
+      start: c.start !== undefined ? String(c.start) : (w0 ? pipeDate(w0.start) : ""), summary: c.summary !== undefined ? String(c.summary).slice(0, 1000) : (w0 ? w0.summary || "" : ""), followedUp: !!c.followedUp };
+    if (c.client === "new") b.newClient = { name: String((c.newClient || {}).name || "").trim(), short: String((c.newClient || {}).short || "").trim() };
+    if (b.stage !== "draft" && !b.sent) b.sent = calKey(new Date());
+    return b;
   }
   function chatValid(c) {
     const okClient = id => state.clients.some(x => x.id === id);
@@ -2498,6 +2515,7 @@ Rules:
       case "add_item": return okClient(c.client) && okWs(c.client, c.ws) && day.test(c.date || "") && KIND_LABEL[c.kind] && !["invoice", "contract"].includes(c.kind) && STATUS_LABEL[c.status] && String(c.title || "").trim() ? "" : "missing or unknown client, engagement, date, kind or status";
       case "update_item": { const it = state.items.find(i => i._id === c.id); if (!it) return "item not found"; if (["invoice", "contract"].includes(it.kind)) return "financial items can't be changed here"; const s = c.set || {}; if (s.status && !STATUS_LABEL[s.status]) return "unknown status"; if (s.date && !day.test(s.date)) return "bad date"; if (s.due && !day.test(s.due)) return "bad due date"; if (s.ws && !okWs(it.client, s.ws)) return "unknown engagement"; return Object.keys(s).length ? "" : "nothing to change"; }
       case "update_engagement": { if (!okWs(c.client, c.ws)) return "engagement not found"; const s = c.set || {}; if (s.status && !WS_LABEL[s.status]) return "unknown status"; if (s.end && !day.test(s.end)) return "bad date"; return Object.keys(s).filter(k => ["status", "end", "summary"].includes(k)).length ? "" : "nothing to change"; }
+      case "save_proposal": { if (!PIPE_LABEL[c.stage]) return "unknown stage"; if (!String(c.name || "").trim() && !c.ws) return "needs a name"; if (c.client === "new") return String((c.newClient || {}).name || "").trim() ? "" : "needs the new organization's name"; if (!okClient(c.client)) return "client not found"; if (c.ws && !okWs(c.client, c.ws)) return "proposal not found"; if ((c.sent && !day.test(c.sent)) || (c.start && !day.test(c.start))) return "bad date"; return ""; }
       case "update_search": { if (!state.searches.some(s => s.id === c.id)) return "search not found"; const s = c.set || {}; if (s.closed && !day.test(s.closed)) return "bad date"; return Object.keys(s).filter(k => ["status", "closed", "placed", "applicants", "note"].includes(k)).length ? "" : "nothing to change"; }
       case "add_event": return String(c.title || "").trim() && day.test(c.date || "") && hm.test(c.start || "") && hm.test(c.end || "") && c.end > c.start ? "" : "needs a title, date, start and end";
       case "update_event": { const ev = CAL.events.find(e => e.id === c.id); return !ev ? "event not found" : !calEditable(ev) ? "only events you set up can be changed" : ""; }
@@ -2590,6 +2608,8 @@ Rules:
       await gs("saveItem", chatItemBody(it, s));
     } else if (c.type === "update_engagement") {
       await gs("updateEngagement", c.client, c.ws, c.set || {});
+    } else if (c.type === "save_proposal") {
+      await gs("saveProposal", chatPropBody(c));
     } else if (c.type === "update_search") {
       await gs("updateSearch", c.id, c.set || {});
     } else if (c.type === "add_event" || c.type === "update_event") {
@@ -2882,7 +2902,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "d0eb656871";
+  var BUILD = "8d366c7149";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
