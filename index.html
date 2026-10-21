@@ -1982,11 +1982,11 @@ button.cal-du.late{cursor:pointer}
     try { const st = await gs("chatStatus"); CH.sample = st && st.ready ? true : null; } catch (e) { CH.sample = null; }
     if (!CH.sample) return;
     const fab = document.createElement("button");
-    fab.id = "chatFab"; fab.type = "button"; fab.className = "chat-fab"; fab.innerHTML = `<span aria-hidden="true">✦</span> Update with Claude`;
+    fab.id = "chatFab"; fab.type = "button"; fab.className = "chat-fab"; fab.innerHTML = `<span aria-hidden="true">♥</span> Heartbeat`;
     fab.addEventListener("click", () => chatToggle(!CH.open));
     const pane = document.createElement("aside");
-    pane.id = "chatPane"; pane.className = "chat-pane"; pane.hidden = true; pane.setAttribute("aria-label", "Update Pulse with Claude");
-    pane.innerHTML = `<header class="chat-head"><div><b>Update with Claude</b><small>Describe what happened. You'll approve every change before it's saved to Pulse.</small></div><button type="button" class="chat-x" id="chatClose" aria-label="Close">×</button></header>
+    pane.id = "chatPane"; pane.className = "chat-pane"; pane.hidden = true; pane.setAttribute("aria-label", "Heartbeat: update Pulse with Claude");
+    pane.innerHTML = `<header class="chat-head"><div><b>Heartbeat</b><small>Describe what happened. You'll approve every change before it's saved to Pulse.</small></div><button type="button" class="chat-x" id="chatClose" aria-label="Close">×</button></header>
       <div class="chat-log" id="chatLog" aria-live="polite"><div class="chat-hint">Try: <button type="button" class="chat-ex">Delivered the HGAR 180-day roadmap today</button><button type="button" class="chat-ex">Mark the LVR COO search round 1 screens done</button><button type="button" class="chat-ex">Set up a call with Grace Smith Thursday at 2pm on my Zoom</button></div></div>
       <form class="chat-form" id="chatForm"><div class="chat-files" id="chatFiles" hidden></div><textarea id="chatIn" rows="2" placeholder="What's new? Attach notes, a PDF or a screenshot with 📎" maxlength="4000"></textarea><div class="chat-acts"><button type="button" class="btn chat-clip" id="chatClip" aria-label="Attach files" title="Attach files (PDF, Word, text, CSV or images)">📎 Attach</button><input type="file" id="chatFile" multiple hidden><span class="chat-sp"></span><button type="button" class="btn" id="chatStop" hidden>Stop</button><button type="submit" class="btn primary" id="chatSend">Send</button></div></form>`;
     document.body.append(fab, pane);
@@ -2478,7 +2478,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "1ae9d4c660";
+  var BUILD = "45db792944";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
