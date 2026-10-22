@@ -1545,7 +1545,8 @@ button.cal-du.late{cursor:pointer}
     const since = c.since || (W.map(w => w.start).filter(Boolean).sort()[0]) || "";
     const months = since ? Math.max(1, Math.round((Date.now() - new Date(since + "T12:00:00")) / (30.44 * 864e5))) : 0;
     const span = w => [w.start ? fmtMonth(w.start) : "", w.end ? fmtMonth(w.end) : (w.status === "active" ? "ongoing" : "")].filter(Boolean).join(" – ");
-    const clip = (t, n) => { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : t; };
+    const clean = t => String(t || "").replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/).filter(x => !/\$|invoice|\bpaid\b|\bfees?\b|\bbill(ed|ing)?\b|retainer amount|\(\d{3,5}[A-Z]?\)|\b[A-Z]{2,}\d{5,}\b|internal/i.test(x)).join(" ");
+    const clip = (t, n) => { t = clean(t); return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : t; };
     const groups = {}; done.forEach(i => { const k = wsName[i.ws] || "Other work"; (groups[k] = groups[k] || []).push(i); });
     const gOrder = W.map(w => w.name).filter(n => groups[n]).concat(groups["Other work"] ? ["Other work"] : []);
     const nextW = W.filter(w => w.status === "active" || w.status === "planned");
@@ -1557,19 +1558,19 @@ button.cal-du.late{cursor:pointer}
         <div class="stat"><div class="n">${W.length}</div><div class="l">engagement${W.length === 1 ? "" : "s"} · ${W.filter(w => w.status === "active").length} in progress</div></div>
         <div class="stat"><div class="n">${nSess}</div><div class="l">working session${nSess === 1 ? "" : "s"}</div></div>
         <div class="stat"><div class="n">${nDel}</div><div class="l">deliverables and milestones</div></div>
-        ${ss.length ? `<div class="stat"><div class="n">${placed.length}</div><div class="l">leadership placement${placed.length === 1 ? "" : "s"}</div></div>` : ""}
+        ${placed.length ? `<div class="stat"><div class="n">${placed.length}</div><div class="l">leadership placement${placed.length === 1 ? "" : "s"}</div></div>` : ss.length ? `<div class="stat"><div class="n">${ss.length}</div><div class="l">leadership search${ss.length === 1 ? "" : "es"} in progress</div></div>` : ""}
       </div>`)}
       ${S("brief", "engagements", W.length ? `<section class="section"><div class="section-head"><h2>Engagements</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Engagement</th><th>Status</th><th>Timeframe</th></tr></thead><tbody>
-        ${W.slice().sort((a, b) => String(b.start || "").localeCompare(String(a.start || ""))).map(w => `<tr><td><b>${esc(w.name)}</b>${w.summary ? `<div class="sub">${esc(clip(w.summary, 260))}</div>` : ""}</td><td><span class="pill ${esc(w.status || "active")}">${esc(STATUS[w.status] || w.status || "")}</span></td><td class="mono">${esc(span(w))}</td></tr>`).join("")}
+        ${W.slice().sort((a, b) => String(b.start || "").localeCompare(String(a.start || ""))).map(w => `<tr><td><b>${esc(w.name)}</b>${clip(w.summary, 260) ? `<div class="sub">${esc(clip(w.summary, 260))}</div>` : ""}</td><td><span class="pill ${esc(w.status || "active")}">${esc(STATUS[w.status] || w.status || "")}</span></td><td class="mono">${esc(span(w))}</td></tr>`).join("")}
       </tbody></table></div></section>` : "")}
       ${S("brief", "delivered", gOrder.length ? `<section class="section"><div class="section-head"><h2>What we delivered</h2><span class="note">${done.length} item${done.length === 1 ? "" : "s"}, newest first</span></div>
-        ${gOrder.map(g => `<div class="br-group"><h3>${esc(g)}</h3><ul class="br-list">${groups[g].slice(0, 14).map(i => `<li><span class="mono">${esc(fmtMonth(i.date))}</span><div><b>${esc(i.title)}</b>${i.note ? `<div class="sub">${esc(clip(i.note, 200))}</div>` : ""}</div></li>`).join("")}${groups[g].length > 14 ? `<li class="more">and ${groups[g].length - 14} more</li>` : ""}</ul></div>`).join("")}
+        ${gOrder.map(g => `<div class="br-group"><h3>${esc(g)}</h3><ul class="br-list">${groups[g].slice(0, 14).map(i => `<li><span class="mono">${esc(fmtMonth(i.date))}</span><div><b>${esc(i.title)}</b>${clip(i.note, 200) ? `<div class="sub">${esc(clip(i.note, 200))}</div>` : ""}</div></li>`).join("")}${groups[g].length > 14 ? `<li class="more">and ${groups[g].length - 14} more</li>` : ""}</ul></div>`).join("")}
       </section>` : "")}
       ${S("brief", "searches", ss.length ? `<section class="section"><div class="section-head"><h2>Leadership searches</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Position</th><th>Outcome</th><th>Timeframe</th><th class="num">Days</th></tr></thead><tbody>
         ${ss.slice().sort((a, b) => String(b.opened || "").localeCompare(String(a.opened || ""))).map(s => { const d = s.opened && s.closed ? Math.round((new Date(s.closed) - new Date(s.opened)) / 864e5) : ""; return `<tr><td>${esc(s.title)}</td><td>${s.placed ? `Placed: <b>${esc(s.placed)}</b>` : esc(s.status === "Active" ? "In progress" : s.status || "")}</td><td class="mono">${s.opened ? esc(fmtMonth(s.opened)) : ""}${s.closed ? " – " + esc(fmtMonth(s.closed)) : ""}</td><td class="num">${d === "" ? "—" : d}</td></tr>`; }).join("")}
       </tbody></table></div></section>` : "")}
       ${S("brief", "next", nextW.length || ahead.length ? `<section class="section"><div class="section-head"><h2>What's next</h2></div><ul class="br-list">
-        ${nextW.map(w => `<li><span class="mono">${esc(w.status === "active" ? "Underway" : "Planned")}</span><div><b>${esc(w.name)}</b>${w.summary ? `<div class="sub">${esc(clip(w.summary, 200))}</div>` : ""}</div></li>`).join("")}
+        ${nextW.map(w => `<li><span class="mono">${esc(w.status === "active" ? "Underway" : "Planned")}</span><div><b>${esc(w.name)}</b>${clip(w.summary, 200) ? `<div class="sub">${esc(clip(w.summary, 200))}</div>` : ""}</div></li>`).join("")}
         ${ahead.slice(0, 12).map(({ i, d }) => `<li><span class="mono">${d ? esc(fmtDay(d)) : ""}</span><div><b>${esc(i.title)}</b>${wsName[i.ws] ? `<div class="sub">${esc(wsName[i.ws])}</div>` : ""}</div></li>`).join("")}
       </ul></section>` : "")}`;
   }
@@ -3262,7 +3263,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "928781e9fd";
+  var BUILD = "031f218cf6";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
