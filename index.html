@@ -701,7 +701,9 @@ button.cal-du.late{cursor:pointer}
 .cz-off .cz-h::after{transform:translateY(1px) rotate(-45deg)}
 .cz-off > :not(.section-head){display:none !important}
 .cz-off > .section-head{margin-bottom:0}
-.cz-bar{display:flex;justify-content:flex-end;gap:14px;margin:-6px 0 6px;font-size:13px}
+.main{position:relative}
+.cz-bar{position:absolute;top:8px;right:max(32px,env(safe-area-inset-right,0px));z-index:3;display:flex;justify-content:flex-end;gap:14px;margin:0;font-size:13px}
+@media (max-width:900px){.cz-bar{position:static;margin:0 0 8px}}
 .cz-bar .linkbtn{color:var(--muted)}
 .cz-bar .linkbtn:hover{color:var(--accent)}
 @media print{.cz-bar{display:none}.cz-h::after{display:none}}
@@ -3196,7 +3198,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "da23fd74fa";
+  var BUILD = "f2e343f3fc";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
