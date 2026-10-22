@@ -1535,6 +1535,7 @@ button.cal-du.late{cursor:pointer}
     if (!c) return `<div class="empty">Choose a client.</div>`;
     const OPEN_PROP = { draft: 1, sent: 1, talks: 1, contract: 1, lost: 1 };
     const W = (c.workstreams || []).filter(w => w.status !== "void" && !OPEN_PROP[w.stage || ""]);
+    const WE = W.filter(w => w.status !== "planned");
     const wsName = {}; W.forEach(w => { wsName[w.id] = w.name; });
     const items = state.items.filter(i => i.client === id && !i.internal && i.kind !== "invoice" && i.kind !== "contract");
     const done = items.filter(i => i.status === "done").sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -1555,13 +1556,13 @@ button.cal-du.late{cursor:pointer}
         <div class="rp-sub">Partnership summary prepared by Victoria Gillespie Consulting Group</div></div></div>
       ${S("brief", "glance", `<div class="stats">
         ${months ? `<div class="stat"><div class="n">${months}</div><div class="l">months working together${since ? ` · since ${esc(fmtMonth(since))}` : ""}</div></div>` : ""}
-        <div class="stat"><div class="n">${W.length}</div><div class="l">engagement${W.length === 1 ? "" : "s"} · ${W.filter(w => w.status === "active").length} in progress</div></div>
+        <div class="stat"><div class="n">${WE.length}</div><div class="l">engagement${WE.length === 1 ? "" : "s"} · ${W.filter(w => w.status === "active").length} in progress</div></div>
         <div class="stat"><div class="n">${nSess}</div><div class="l">working session${nSess === 1 ? "" : "s"}</div></div>
         <div class="stat"><div class="n">${nDel}</div><div class="l">deliverables and milestones</div></div>
         ${placed.length ? `<div class="stat"><div class="n">${placed.length}</div><div class="l">leadership placement${placed.length === 1 ? "" : "s"}</div></div>` : ss.length ? `<div class="stat"><div class="n">${ss.length}</div><div class="l">leadership search${ss.length === 1 ? "" : "es"} in progress</div></div>` : ""}
       </div>`)}
-      ${S("brief", "engagements", W.length ? `<section class="section"><div class="section-head"><h2>Engagements</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Engagement</th><th>Status</th><th>Timeframe</th></tr></thead><tbody>
-        ${W.slice().sort((a, b) => String(b.start || "").localeCompare(String(a.start || ""))).map(w => `<tr><td><b>${esc(w.name)}</b>${clip(w.summary, 260) ? `<div class="sub">${esc(clip(w.summary, 260))}</div>` : ""}</td><td><span class="pill ${esc(w.status || "active")}">${esc(STATUS[w.status] || w.status || "")}</span></td><td class="mono">${esc(span(w))}</td></tr>`).join("")}
+      ${S("brief", "engagements", WE.length ? `<section class="section"><div class="section-head"><h2>Engagements</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Engagement</th><th>Status</th><th>Timeframe</th></tr></thead><tbody>
+        ${WE.slice().sort((a, b) => String(b.start || "").localeCompare(String(a.start || ""))).map(w => `<tr><td><b>${esc(w.name)}</b>${clip(w.summary, 260) ? `<div class="sub">${esc(clip(w.summary, 260))}</div>` : ""}</td><td><span class="pill ${esc(w.status || "active")}">${esc(STATUS[w.status] || w.status || "")}</span></td><td class="mono">${esc(span(w))}</td></tr>`).join("")}
       </tbody></table></div></section>` : "")}
       ${S("brief", "delivered", gOrder.length ? `<section class="section"><div class="section-head"><h2>What we delivered</h2><span class="note">${done.length} item${done.length === 1 ? "" : "s"}, newest first</span></div>
         ${gOrder.map(g => `<div class="br-group"><h3>${esc(g)}</h3><ul class="br-list">${groups[g].slice(0, 14).map(i => `<li><span class="mono">${esc(fmtMonth(i.date))}</span><div><b>${esc(i.title)}</b>${clip(i.note, 200) ? `<div class="sub">${esc(clip(i.note, 200))}</div>` : ""}</div></li>`).join("")}${groups[g].length > 14 ? `<li class="more">and ${groups[g].length - 14} more</li>` : ""}</ul></div>`).join("")}
@@ -3263,7 +3264,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "031f218cf6";
+  var BUILD = "7af3017d69";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
