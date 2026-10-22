@@ -1615,7 +1615,9 @@ button.cal-du.late{cursor:pointer}
   const calCreate = o => call("createCalEvent", o);
   const calUpdate = (id, o) => call("updateCalEvent", id, o);
   const calDelete = (id, n) => call("deleteCalEvent", id, !!n);
-  const calUserEmail = () => store.get("pulse.email") || "";
+  const CAL_SELF_GUEST = true;
+  const calUserEmail = () => store.get("pulse.whoami") || store.get("pulse.email") || "";
+  setTimeout(() => { try { if (store.get("pulse.token")) call("whoami").then(r => { if (r && r.email) store.set("pulse.whoami", String(r.email).toLowerCase()); }).catch(() => {}); } catch (e) {} }, 1500);
   const calWhere = "Adds to Phil's VGCG Google Calendar.";
   /* ---------- Calendar (Phil's VGCG Google Calendar) ---------- */
   const CAL = { flash: "", h0: 8, events: [], loaded: false, loading: false, err: "", from: 0, to: 0, fetched: "", view: "", anchor: null, timer: 0 };
@@ -2414,6 +2416,7 @@ button.cal-du.late{cursor:pointer}
   function calNewEvent(date, time) {
     const dlg = calNevDialog();
     $("#nevForm").reset(); NEV.guests = []; calNevErr(""); calNevMode(null);
+    { const me = String(calUserEmail() || "").trim().toLowerCase(); if (CAL_SELF_GUEST && CAL_EMAIL.test(me) && me !== CAL_PEOPLE.phil[1]) NEV.guests = [me]; }
     const now = new Date(), start = time ? null : new Date(Math.ceil((now.getTime() + 5 * 60e3) / 18e5) * 18e5);
     $("#nevDate").value = date || calKey(start);
     $("#nevStart").value = time || pad2(start.getHours()) + ":" + pad2(start.getMinutes());
@@ -3193,7 +3196,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "f6b5175b84";
+  var BUILD = "da23fd74fa";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
