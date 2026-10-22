@@ -708,6 +708,18 @@ button.cal-du.late{cursor:pointer}
 .cz-bar .linkbtn:hover{color:var(--accent)}
 @media print{.cz-bar{display:none}.cz-h::after{display:none}}
 
+/* ---------- client-ready report ---------- */
+.br-head{margin-bottom:4px}
+.br-group{margin:0 0 14px}
+.br-group h3{font:700 14px/1.3 var(--f-display);margin:0 0 6px}
+.br-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.br-list li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:9px 14px;border-top:1px solid var(--line);font-size:14px;line-height:1.4}
+.br-list li:first-child{border-top:0}
+.br-list li .mono{color:var(--muted);font-size:12.5px;padding-top:1px}
+.br-list li.more{display:block;color:var(--muted);font-size:13px}
+@media print{.br-list li{break-inside:avoid}.br-group{break-inside:avoid-page}}
+@media (max-width:560px){.br-list li{grid-template-columns:70px minmax(0,1fr)}}
+
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.ok{background:#1d8a52}
 .hdot.watch{background:#d99a20}
@@ -1010,7 +1022,7 @@ button.cal-du.late{cursor:pointer}
           ${c.blurb ? `<p class="lede">${esc(c.blurb)}</p>` : ""}
           <div class="contacts">${(c.contacts||[]).map(p => p.email ? `<a class="chip mail" href="mailto:${esc(p.email)}" title="Email ${esc(p.name)}"><b>${esc(p.name)}</b> · ${esc(p.role||"")}<span class="at">${esc(p.email)}</span></a>` : `<span class="chip"><b>${esc(p.name)}</b> · ${esc(p.role||"")}</span>`).join("")}${c.billingEmail && !(c.contacts||[]).some(p => p.email && c.billingEmail.toLowerCase().includes(p.email.toLowerCase())) ? `<a class="chip mail" href="mailto:${esc(String(c.billingEmail).replace(/\s+/g, ""))}" title="Billing contact from QuickBooks"><b>Billing</b><span class="at">${esc(c.billingEmail)}</span></a>` : ""}</div>
         </div>
-        ${editOK ? `<div class="toolbar"><button class="btn primary" type="button" id="addItem">Add work</button></div>` : ""}
+        <div class="toolbar"><button class="btn" type="button" data-brief="${esc(c.id)}" title="A client-facing summary to print or save as a PDF">Client-ready PDF</button>${editOK ? `<button class="btn primary" type="button" id="addItem">Add work</button>` : ""}</div>
       </header>
       ${(() => { if (state.clientView || !b.inv.length) return ""; const cy = String(new Date().getFullYear()); const cyInv = b.inv.filter(i => i.date.slice(0,4) === cy); const cyB = cyInv.reduce((s,i)=>s+i.amount,0); const pend = upcomingPayments().filter(p => p.client === c.id); const pendT = pend.reduce((s,p)=>s+p.amount,0); return `<div class="stats fin-top" aria-label="Financial summary">
         <div class="stat"><div class="n">${money0(cyB)}</div><div class="l">billed in ${cy} · ${cyInv.length} invoice${cyInv.length===1?"":"s"}</div></div>
@@ -1365,11 +1377,12 @@ button.cal-du.late{cursor:pointer}
     revenue: [["summary","Summary numbers"],["trend","Revenue over time"],["byclient","By client"],["invoices","Invoice list"]],
     receivables: [["summary","Summary numbers"],["aging","Aging"],["open","Open invoices"],["upcoming","Upcoming contract balances"]],
     client: [["profile","About and contacts"],["summary","Summary numbers"],["years","Revenue by year"],["projects","Projects"],["contracts","Contracts"],["searches","Executive searches"],["work","Work delivered"],["invoices","Invoices"]],
+    brief: [["glance","At a glance"],["engagements","Engagements"],["delivered","What we delivered"],["searches","Leadership searches"],["next","What's next"]],
     talent: [["summary","Summary numbers"],["byclient","By client"],["searches","Search list"]]
   };
   let rpOff = {}; try { rpOff = JSON.parse(localStorage.getItem("pulse.rpOff") || "{}") || {}; } catch (e) {}
   const S = (t, k, html) => rpOff[t + "." + k] ? "" : html;
-  const RP_TYPES = [["revenue","Revenue"],["receivables","Receivables"],["client","Client summary"],["talent","Talent"]];
+  const RP_TYPES = [["revenue","Revenue"],["receivables","Receivables"],["client","Client summary"],["brief","Client-ready"],["talent","Talent"]];
   const RP_PERIODS = [["ytd","This year to date"],["lastyear","Last year"],["qtd","This quarter to date"],["lastq","Last quarter"],["12m","Last 12 months"],["all","All time"],["custom","Custom range"]];
   function rpYmd(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
   function rpRange() {
@@ -1516,19 +1529,70 @@ button.cal-du.late{cursor:pointer}
         ${sorted.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cl==="all"?"<th>Client</th>":""}<th>Position</th><th>Status</th><th>Opened</th><th>Closed</th><th class="num">Days</th><th class="num">Applicants</th><th>Placed</th></tr></thead><tbody>
         ${sorted.map(s => { const d = s.opened ? Math.round(((s.closed ? new Date(s.closed) : new Date()) - new Date(s.opened)) / 864e5) : null; return `<tr>${cl==="all"?`<td>${esc(rpName(s.client))}</td>`:""}<td>${esc(s.title)}</td><td><span class="pill ${s.status==="Active"?"active":s.status==="Placed"?"done":"planned"}">${esc(s.status||"")}</span></td><td class="mono">${esc(s.opened||"")}</td><td class="mono">${esc(s.closed||"")}</td><td class="num">${d===null?"—":d}</td><td class="num">${s.applicants||"—"}</td><td>${esc(s.placed||"")}</td></tr>`; }).join("")}</tbody></table></div>` : `<div class="empty">No searches in this range.</div>`}</section>`)}`;
   }
+  /* ---------- Client-ready report: a client-facing partnership summary (no fees, invoices, contracts or internal items) ---------- */
+  function rpBrief(id) {
+    const c = state.clients.find(x => x.id === id);
+    if (!c) return `<div class="empty">Choose a client.</div>`;
+    const OPEN_PROP = { draft: 1, sent: 1, talks: 1, contract: 1, lost: 1 };
+    const W = (c.workstreams || []).filter(w => w.status !== "void" && !OPEN_PROP[w.stage || ""]);
+    const wsName = {}; W.forEach(w => { wsName[w.id] = w.name; });
+    const items = state.items.filter(i => i.client === id && !i.internal && i.kind !== "invoice" && i.kind !== "contract");
+    const done = items.filter(i => i.status === "done").sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    const ahead = items.filter(i => i.status === "planned" || i.status === "active").map(i => ({ i, d: i.due || i.date || "" })).sort((a, b) => String(a.d).localeCompare(String(b.d)));
+    const ss = state.searches.filter(s => s.client === id);
+    const placed = ss.filter(s => s.placed);
+    const nSess = done.filter(i => i.kind === "meeting").length, nDel = done.filter(i => i.kind === "deliverable" || i.kind === "milestone").length;
+    const since = c.since || (W.map(w => w.start).filter(Boolean).sort()[0]) || "";
+    const months = since ? Math.max(1, Math.round((Date.now() - new Date(since + "T12:00:00")) / (30.44 * 864e5))) : 0;
+    const span = w => [w.start ? fmtMonth(w.start) : "", w.end ? fmtMonth(w.end) : (w.status === "active" ? "ongoing" : "")].filter(Boolean).join(" – ");
+    const clip = (t, n) => { t = String(t || "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1).replace(/\s+\S*$/, "") + "…" : t; };
+    const groups = {}; done.forEach(i => { const k = wsName[i.ws] || "Other work"; (groups[k] = groups[k] || []).push(i); });
+    const gOrder = W.map(w => w.name).filter(n => groups[n]).concat(groups["Other work"] ? ["Other work"] : []);
+    const nextW = W.filter(w => w.status === "active" || w.status === "planned");
+    return `
+      <div class="rp-client br-head">${c.logo ? `<img class="${c.logoDark ? "dark" : ""}" src="${esc(c.logo)}" alt="">` : ""}<div><div class="rp-title">${esc(c.name)}</div>
+        <div class="rp-sub">Partnership summary prepared by Victoria Gillespie Consulting Group</div></div></div>
+      ${S("brief", "glance", `<div class="stats">
+        ${months ? `<div class="stat"><div class="n">${months}</div><div class="l">months working together${since ? ` · since ${esc(fmtMonth(since))}` : ""}</div></div>` : ""}
+        <div class="stat"><div class="n">${W.length}</div><div class="l">engagement${W.length === 1 ? "" : "s"} · ${W.filter(w => w.status === "active").length} in progress</div></div>
+        <div class="stat"><div class="n">${nSess}</div><div class="l">working session${nSess === 1 ? "" : "s"}</div></div>
+        <div class="stat"><div class="n">${nDel}</div><div class="l">deliverables and milestones</div></div>
+        ${ss.length ? `<div class="stat"><div class="n">${placed.length}</div><div class="l">leadership placement${placed.length === 1 ? "" : "s"}</div></div>` : ""}
+      </div>`)}
+      ${S("brief", "engagements", W.length ? `<section class="section"><div class="section-head"><h2>Engagements</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Engagement</th><th>Status</th><th>Timeframe</th></tr></thead><tbody>
+        ${W.slice().sort((a, b) => String(b.start || "").localeCompare(String(a.start || ""))).map(w => `<tr><td><b>${esc(w.name)}</b>${w.summary ? `<div class="sub">${esc(clip(w.summary, 260))}</div>` : ""}</td><td><span class="pill ${esc(w.status || "active")}">${esc(STATUS[w.status] || w.status || "")}</span></td><td class="mono">${esc(span(w))}</td></tr>`).join("")}
+      </tbody></table></div></section>` : "")}
+      ${S("brief", "delivered", gOrder.length ? `<section class="section"><div class="section-head"><h2>What we delivered</h2><span class="note">${done.length} item${done.length === 1 ? "" : "s"}, newest first</span></div>
+        ${gOrder.map(g => `<div class="br-group"><h3>${esc(g)}</h3><ul class="br-list">${groups[g].slice(0, 14).map(i => `<li><span class="mono">${esc(fmtMonth(i.date))}</span><div><b>${esc(i.title)}</b>${i.note ? `<div class="sub">${esc(clip(i.note, 200))}</div>` : ""}</div></li>`).join("")}${groups[g].length > 14 ? `<li class="more">and ${groups[g].length - 14} more</li>` : ""}</ul></div>`).join("")}
+      </section>` : "")}
+      ${S("brief", "searches", ss.length ? `<section class="section"><div class="section-head"><h2>Leadership searches</h2></div><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Position</th><th>Outcome</th><th>Timeframe</th><th class="num">Days</th></tr></thead><tbody>
+        ${ss.slice().sort((a, b) => String(b.opened || "").localeCompare(String(a.opened || ""))).map(s => { const d = s.opened && s.closed ? Math.round((new Date(s.closed) - new Date(s.opened)) / 864e5) : ""; return `<tr><td>${esc(s.title)}</td><td>${s.placed ? `Placed: <b>${esc(s.placed)}</b>` : esc(s.status === "Active" ? "In progress" : s.status || "")}</td><td class="mono">${s.opened ? esc(fmtMonth(s.opened)) : ""}${s.closed ? " – " + esc(fmtMonth(s.closed)) : ""}</td><td class="num">${d === "" ? "—" : d}</td></tr>`; }).join("")}
+      </tbody></table></div></section>` : "")}
+      ${S("brief", "next", nextW.length || ahead.length ? `<section class="section"><div class="section-head"><h2>What's next</h2></div><ul class="br-list">
+        ${nextW.map(w => `<li><span class="mono">${esc(w.status === "active" ? "Underway" : "Planned")}</span><div><b>${esc(w.name)}</b>${w.summary ? `<div class="sub">${esc(clip(w.summary, 200))}</div>` : ""}</div></li>`).join("")}
+        ${ahead.slice(0, 12).map(({ i, d }) => `<li><span class="mono">${d ? esc(fmtDay(d)) : ""}</span><div><b>${esc(i.title)}</b>${wsName[i.ws] ? `<div class="sub">${esc(wsName[i.ws])}</div>` : ""}</div></li>`).join("")}
+      </ul></section>` : "")}`;
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-brief]"); if (!b) return;
+    state.rp.type = "brief"; state.rp.cclient = b.dataset.brief;
+    const nav = document.querySelector('.rail [data-id="__reports"]'); if (nav) nav.click(); else { state.current = "__reports"; renderMain(); }
+    setTimeout(() => { try { window.scrollTo(0, 0); } catch (err) {} }, 50);
+  });
+
   function renderReports() {
     const main = $("#main"), r = state.rp, t = r.type;
     const clients = state.clients.slice().sort((a,b) => (a.short||a.name).localeCompare(b.short||b.name));
-    if (t === "client" && !clients.some(c => c.id === r.cclient)) {
+    if ((t === "client" || t === "brief") && !clients.some(c => c.id === r.cclient)) {
       const top = state.clients.map(c => ({ c, b: billingFor(c.id).billed })).sort((a,b) => b.b - a.b)[0];
       r.cclient = top ? top.c.id : "";
     }
-    const sel = t === "client" ? r.cclient : r.client;
+    const sel = (t === "client" || t === "brief") ? r.cclient : r.client;
     const R = rpRange(), title = RP_TYPES.find(x => x[0] === t)[1];
     const usesPeriod = t === "revenue" || t === "talent";
-    const scope = t === "client" ? "" : (r.client === "all" ? "All clients" : rpName(r.client));
+    const scope = (t === "client" || t === "brief") ? "" : (r.client === "all" ? "All clients" : rpName(r.client));
     const sub = [usesPeriod ? R.label : (t === "receivables" ? "As of " + fmtDay(rpYmd(new Date())) + ", " + new Date().getFullYear() : ""), scope].filter(Boolean).join(" · ");
-    const body = t === "revenue" ? rpRevenue(R, r.client) : t === "receivables" ? rpReceivables(r.client) : t === "client" ? rpClient(r.cclient) : rpTalent(R, r.client);
+    const body = t === "revenue" ? rpRevenue(R, r.client) : t === "receivables" ? rpReceivables(r.client) : t === "client" ? rpClient(r.cclient) : t === "brief" ? rpBrief(r.cclient) : rpTalent(R, r.client);
     main.innerHTML = `<div class="top"><header class="head"><div style="min-width:0">
         <h1>Reports</h1>
         <p class="lede">Revenue, receivables, client and talent reports from the same numbers as the rest of Pulse. Print or save any report as a PDF.</p>
@@ -1538,7 +1602,7 @@ button.cal-du.late{cursor:pointer}
         <div class="rp-row">
           ${usesPeriod ? `<label>Period <select id="rpPeriod">${RP_PERIODS.map(([k,l]) => `<option value="${k}"${r.period===k?" selected":""}>${l}</option>`).join("")}</select></label>` : ""}
           ${usesPeriod && r.period === "custom" ? `<label>From <input type="date" id="rpFrom" value="${esc(R.from)}"></label><label>To <input type="date" id="rpTo" value="${esc(R.to)}"></label>` : ""}
-          <label>Client <select id="rpClient">${t !== "client" ? `<option value="all">All clients</option>` : ""}${clients.map(c => `<option value="${esc(c.id)}"${sel===c.id?" selected":""}>${esc(c.short||c.name)}</option>`).join("")}</select></label>
+          <label>Client <select id="rpClient">${t !== "client" && t !== "brief" ? `<option value="all">All clients</option>` : ""}${clients.map(c => `<option value="${esc(c.id)}"${sel===c.id?" selected":""}>${esc(c.short||c.name)}</option>`).join("")}</select></label>
           <button type="button" class="btn" id="rpPrint">Print or save PDF</button>
         </div>
         <details class="rp-custom"${state.rpCustOpen ? " open" : ""}><summary>Choose what's in this report</summary>
@@ -1547,8 +1611,8 @@ button.cal-du.late{cursor:pointer}
         ${typeof rpMailPanel === "function" ? rpMailPanel() : ""}
       </div></div>
       <section class="section col-full"><div class="report">
-        <div class="rp-print-head"><span>Victoria Gillespie Consulting Group · Pulse</span><span>Prepared ${esc(fmtDay(rpYmd(new Date())))}, ${new Date().getFullYear()}</span></div>
-        <div><div class="rp-title">${esc(title)} report</div>${sub ? `<div class="rp-sub">${esc(sub)}</div>` : ""}</div>
+        <div class="rp-print-head"><span>Victoria Gillespie Consulting Group${t === "brief" ? "" : " · Pulse"}</span><span>Prepared ${esc(fmtDay(rpYmd(new Date())))}, ${new Date().getFullYear()}</span></div>
+        ${t === "brief" ? "" : `<div><div class="rp-title">${esc(title)} report</div>${sub ? `<div class="rp-sub">${esc(sub)}</div>` : ""}</div>`}
         ${body}
       </div></section>`;
   }
@@ -2191,7 +2255,7 @@ button.cal-du.late{cursor:pointer}
     let busy = false;
     function heads(root) {
       return [...(root || document).querySelectorAll(".section-head")].filter(hd => {
-        if (hd.closest("dialog,[role=dialog],.modal,.dlg")) return false;
+        if (hd.closest("dialog,[role=dialog],.modal,.dlg,.report")) return false;
         const box = hd.parentElement, h = hd.querySelector("h2");
         return box && h && box.children.length > 1;
       });
@@ -3164,7 +3228,7 @@ Rules:
   document.addEventListener("change", e => {
     const id = e.target && e.target.id;
     if (id === "rpPeriod") { state.rp.period = e.target.value; renderMain(); }
-    else if (id === "rpClient") { state.rp[state.rp.type === "client" ? "cclient" : "client"] = e.target.value; renderMain(); }
+    else if (id === "rpClient") { state.rp[(state.rp.type === "client" || state.rp.type === "brief") ? "cclient" : "client"] = e.target.value; renderMain(); }
     else if (e.target.dataset && e.target.dataset.rsec) { rpOff[e.target.dataset.rsec] = !e.target.checked; try { localStorage.setItem("pulse.rpOff", JSON.stringify(rpOff)); } catch (err) {} renderMain(); }
     else if (id === "rpFrom" || id === "rpTo") { if (e.target.value) { state.rp[id === "rpFrom" ? "from" : "to"] = e.target.value; renderMain(); } }
   });
@@ -3198,7 +3262,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "f2e343f3fc";
+  var BUILD = "928781e9fd";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
