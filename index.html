@@ -721,6 +721,18 @@ button.cal-du.late{cursor:pointer}
 @media print{.br-list li{break-inside:avoid}.br-group{break-inside:avoid-page}}
 @media (max-width:560px){.br-list li{grid-template-columns:70px minmax(0,1fr)}}
 
+/* ---------- notifications dialog ---------- */
+.push-dlg{max-width:460px;width:calc(100% - 32px)}
+.push-in{display:flex;flex-direction:column;gap:14px}
+.push-in h2{margin:0}
+.push-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.push-kinds{border:1px solid var(--line);border-radius:10px;padding:10px 14px 12px;margin:0;display:flex;flex-direction:column;gap:8px}
+.push-kinds[disabled]{opacity:.55}
+.push-kinds legend{font:600 13px/1 var(--f-display);color:var(--muted);padding:0 6px}
+.push-note{background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:0;font-size:14px;line-height:1.45}
+.push-actions{display:flex;justify-content:space-between;align-items:center}
+.push-msg{margin:0;font-size:13.5px;color:var(--accent)}
+
 .hdot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:var(--line)}
 .hdot.ok{background:#1d8a52}
 .hdot.watch{background:#d99a20}
@@ -798,6 +810,7 @@ button.cal-du.late{cursor:pointer}
 .gate .err:empty,.gate .msg:empty{display:none}
 .gate .code{letter-spacing:.3em;text-align:center;font-size:22px}
 </style>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 </head>
 <body>
 <div class="gate" id="gate" hidden>
@@ -852,6 +865,7 @@ button.cal-du.late{cursor:pointer}
     <div class="rail-foot">
       <button class="toggle" id="themeBtn" type="button" role="switch" aria-checked="false"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Dark mode</span></button>
       <button class="toggle" id="clientViewBtn" type="button" role="switch" aria-checked="false"><span class="tg-track" aria-hidden="true"><span class="tg-knob"></span></span><span class="tg-text">Client view</span></button>
+      <button class="btn" id="pushBtn" type="button">Notifications</button>
       <button class="btn" id="refreshBtn" type="button">Refresh</button>
       <button class="btn" id="signOutBtn" type="button">Sign out</button>
     </div>
@@ -3014,6 +3028,92 @@ Rules:
     try { await load(); } catch (e) {}
     renderMain();
   }
+  /* ---------- Push notifications (OneSignal web push; each person picks what they're told about) ---------- */
+  const PUSH_APP = "b73f6c3d-f247-4132-89df-f4beaab984ec";
+  const PUSH_KINDS = [
+    ["interviews", "Interviews booked or canceled"],
+    ["contracts", "Contracts signed or expired"],
+    ["money", "Invoices and payments"],
+    ["pipeline", "Proposals and pipeline changes"],
+    ["clients", "Client email updates (from inbox triage)"],
+    ["searches", "Search ranking changes"],
+    ["partner", "Edits your partner makes in Pulse"]
+  ];
+  const PUSH = { prefs: null, busy: false, msg: "" };
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function (OS) {
+    try {
+      await OS.init({ appId: PUSH_APP, serviceWorkerPath: "OneSignalSDKWorker.js", serviceWorkerParam: { scope: "/pulse/" }, notifyButton: { enable: false }, promptOptions: { autoPrompt: false } });
+      window.__pulseOS = OS;
+      const me = (typeof calUserEmail === "function" && calUserEmail()) || store.get("pulse.email") || "";
+      if (me && OS.Notifications.permission) await OS.login(String(me).toLowerCase());
+    } catch (e) { PUSH.msg = "Notifications aren't available in this browser."; }
+  });
+  const pushIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const pushStandalone = () => (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  function pushDialog() {
+    let d = document.getElementById("pushDlg");
+    if (!d) {
+      d = document.createElement("dialog"); d.id = "pushDlg"; d.className = "dlg push-dlg";
+      document.body.appendChild(d);
+      d.addEventListener("click", pushClick);
+      d.addEventListener("change", e => { const k = e.target.dataset && e.target.dataset.pk; if (k && PUSH.prefs) { PUSH.prefs[k] = e.target.checked; pushSave(); } });
+    }
+    return d;
+  }
+  function pushRender() {
+    const d = pushDialog(), OS = window.__pulseOS, p = PUSH.prefs || {};
+    const perm = OS ? OS.Notifications.permission : false, supported = OS ? OS.Notifications.isPushSupported() : false;
+    const needHome = pushIOS() && !pushStandalone();
+    const deviceOn = !!(perm && OS && OS.User && OS.User.PushSubscription && OS.User.PushSubscription.optedIn);
+    d.innerHTML = `<form method="dialog" class="push-in">
+      <h2>Notifications</h2>
+      ${needHome ? `<p class="push-note">On iPhone and iPad, notifications only work from the Pulse app on your Home Screen. In Safari, tap <b>Share</b> → <b>Add to Home Screen</b>, open Pulse from the new icon, sign in, and come back here.</p>`
+        : !supported ? `<p class="push-note">${esc(PUSH.msg || "This browser can't receive notifications. Try Chrome, Edge, Firefox or Safari.")}</p>`
+        : `<div class="push-row"><div><b>This device</b><div class="sub">${deviceOn ? "Notifications are on here." : perm ? "Allowed, but turned off for Pulse." : "Not turned on yet."}</div></div>
+            <button type="button" class="btn ${deviceOn ? "" : "primary"}" data-push="${deviceOn ? "off" : "on"}">${deviceOn ? "Turn off here" : "Turn on notifications"}</button></div>`}
+      <fieldset class="push-kinds"${p.on ? "" : " disabled"}><legend>Tell me about</legend>
+        ${PUSH_KINDS.map(([k, l]) => `<label class="check"><input type="checkbox" role="switch" role="switch" data-pk="${k}"${p[k] ? " checked" : ""}> ${esc(l)}</label>`).join("")}
+      </fieldset>
+      <p class="sub">Your choices apply to every device you turn on. Things you do yourself never notify you. Alerts arrive within about 10 minutes.</p>
+      <div class="push-actions">${p.on && deviceOn ? `<button type="button" class="linkbtn" data-push="test">Send me a test</button>` : "<span></span>"}<button class="btn" value="close">Done</button></div>
+      ${PUSH.msg ? `<p class="push-msg">${esc(PUSH.msg)}</p>` : ""}
+    </form>`;
+  }
+  async function pushOpen() {
+    const d = pushDialog(); PUSH.msg = "";
+    if (!PUSH.prefs) { try { PUSH.prefs = await gs("getPushPrefs"); } catch (e) { PUSH.prefs = { on: false }; PUSH.msg = (e && e.message) || "Couldn't load your settings."; } }
+    pushRender(); if (!d.open) d.showModal();
+  }
+  async function pushSave() { try { PUSH.prefs = await gs("savePushPrefs", PUSH.prefs); } catch (e) { PUSH.msg = (e && e.message) || "Couldn't save."; } pushRender(); }
+  async function pushClick(e) {
+    const b = e.target.closest("[data-push]"); if (!b || PUSH.busy) return;
+    const OS = window.__pulseOS; PUSH.busy = true; PUSH.msg = "";
+    try {
+      if (b.dataset.push === "on") {
+        const ok = await OS.Notifications.requestPermission();
+        if (OS.Notifications.permission) {
+          const me = String(calUserEmail() || store.get("pulse.email") || "").toLowerCase();
+          if (me) await OS.login(me);
+          await OS.User.PushSubscription.optIn();
+          PUSH.prefs = Object.assign({}, PUSH.prefs, { on: true }); await pushSave();
+          PUSH.msg = "Notifications are on for this device.";
+        } else PUSH.msg = ok === false ? "Notifications were blocked. Allow them for this site in your browser or phone settings, then try again." : "Notifications weren't allowed.";
+      } else if (b.dataset.push === "off") {
+        await OS.User.PushSubscription.optOut(); PUSH.msg = "Turned off on this device.";
+      } else if (b.dataset.push === "test") {
+        const r = await gs("testPush"); PUSH.msg = r ? "Test sent. It should arrive in a few seconds." : "Couldn't send the test. Check that both OneSignal keys are saved in the script settings.";
+      }
+    } catch (err) { PUSH.msg = (err && err.message) || "Something went wrong."; }
+    PUSH.busy = false; pushRender();
+  }
+  document.addEventListener("click", e => { if (e.target.closest("#pushBtn")) { e.preventDefault(); pushOpen(); } });
+  (function pushDeepLink() {
+    let c = ""; try { c = new URLSearchParams(location.search).get("c") || ""; } catch (e) {}
+    if (!c) return; let n = 0;
+    const t = setInterval(() => { const el = document.querySelector(`.rail [data-id="${CSS.escape(c)}"]`); if (el) { clearInterval(t); el.click(); } else if (++n > 40) clearInterval(t); }, 500);
+  })();
+
   function render(){ renderRail(); renderMain(); chatSync(); }
 
   function openItem(item) {
@@ -3265,7 +3365,7 @@ Rules:
 </script>
 <script>
 (function () {
-  var BUILD = "f27c47a415";
+  var BUILD = "bfd04cb794";
   function check() {
     fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
       if (!v || !v.build || v.build === BUILD) return;
