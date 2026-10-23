@@ -675,6 +675,22 @@ button.cal-du.late{cursor:pointer}
 /* ---------- communications log ---------- */
 .cm-f{flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .cm-f button span{color:var(--muted);font-weight:500;margin-left:2px}
+.in-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.in-row{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.in-row.in-done{opacity:.72}
+.in-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.in-meta{font-size:12.5px;color:var(--muted)}
+.in-t{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.in-t a{color:inherit;text-decoration:none}.in-t a:hover{text-decoration:underline}
+.in-s{font-size:14px}
+.in-a{background:var(--accent-soft);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.in-a small{font-size:11.5px;color:var(--accent);font-weight:600}
+.in-a span{font-size:14px}
+.in-f{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+.in-src{font-size:12.5px;color:var(--muted);margin-right:auto;overflow-wrap:anywhere}
+.in-st{font-size:12.5px;color:var(--muted)}
+.in-f .btn{padding:4px 10px;font-size:13px}
+.in-run{font-size:13px;color:var(--muted);margin-top:6px}
 .cm-sep{width:1px;align-self:stretch;background:var(--line);margin:0 4px}
 .cm-list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .cm-mo{padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--bg);border-top:1px solid var(--line)}
@@ -923,7 +939,7 @@ button.cal-du.late{cursor:pointer}
 <script>
 (() => {
   const $ = s => document.querySelector(s);
-  const state = { clients: [], items: [], invoices: [], overrides: [], searches: [], tf: "all", rp: { type: "revenue", period: "ytd", client: "all", cclient: "", from: "", to: "" }, current: null, ws: "all", kind: "all", clientView: false, canEdit: false, q: "", editing: null };
+  const state = { clients: [], items: [], invoices: [], overrides: [], searches: [], intel: [], intelMeta: null, tf: "all", rp: { type: "revenue", period: "ytd", client: "all", cclient: "", from: "", to: "" }, current: null, ws: "all", kind: "all", clientView: false, canEdit: false, q: "", editing: null };
   const KIND = { deliverable: "Deliverable", milestone: "Milestone", meeting: "Session", proposal: "Proposal", invoice: "Invoice", contract: "Contract" };
   const STATUS = { done: "Done", active: "In progress", planned: "Planned", void: "Not executed" };
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -980,13 +996,13 @@ button.cal-du.late{cursor:pointer}
     const otherC = state.clients.filter(c => !isActive(c) && !isProsp(c)).sort((a,b) => billedTot(b.id) - billedTot(a.id) || nm(a).localeCompare(nm(b)));
     const sorted = [...prospC, ...activeC, ...otherC];
     const grpLabel = t => `<li class="rail-group" aria-hidden="true">${t}</li>`;
-    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__pipeline" aria-current="${state.current==="__pipeline"}"><span>Pipeline</span>${(() => { const o = pipeOpenList(), f = o.filter(p => p.nudge).length; return o.length ? `<span class="cnts"><span class="cb prog" title="${o.length} open">${o.length}</span>${f ? `<span class="cb flag" title="${f} need a follow-up">${f}</span>` : ""}</span>` : ""; })()}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
+    const ov = state.clientView ? "" : `<li><button type="button" data-id="__home" aria-current="${state.current==="__home"}"><span>Home</span></button></li><li><button type="button" data-id="__billing" aria-current="${state.current==="__billing"}"><span>Financials</span></button></li><li><button type="button" data-id="__talent" aria-current="${state.current==="__talent"}"><span>Talent</span>${state.searches.length ? (() => { const a = state.searches.filter(s => s.status === "Active").length, d = state.searches.length - a; return `<span class="cnts"><span class="cb prog${a ? "" : " zero"}" title="${a} in progress">${a}</span><span class="cb done${d ? "" : " zero"}" title="${d} completed">${d}</span></span>`; })() : ""}</button></li><li><button type="button" data-id="__calendar" aria-current="${state.current==="__calendar"}"><span>Calendar</span></button></li><li><button type="button" data-id="__pipeline" aria-current="${state.current==="__pipeline"}"><span>Pipeline</span>${(() => { const o = pipeOpenList(), f = o.filter(p => p.nudge).length; return o.length ? `<span class="cnts"><span class="cb prog" title="${o.length} open">${o.length}</span>${f ? `<span class="cb flag" title="${f} need a follow-up">${f}</span>` : ""}</span>` : ""; })()}</button></li><li><button type="button" data-id="__intel" aria-current="${state.current==="__intel"}"><span>Intelligence</span>${(() => { const o = state.intel.filter(i => !i.status || i.status === "new"), r = o.filter(i => i.signal === "risk").length; return o.length ? `<span class="cnts"><span class="cb prog" title="${o.length} to review">${o.length}</span>${r ? `<span class="cb flag" title="${r} risk${r===1?"":"s"}">${r}</span>` : ""}</span>` : ""; })()}</button></li><li><button type="button" data-id="__reports" aria-current="${state.current==="__reports"}"><span>Reports</span></button></li><li class="rail-sep" aria-hidden="true"></li>`;
     const matchQ = c => !q || (c.name+" "+(c.short||"")).toLowerCase().includes(q);
     const rowHtml = c => `<li><button type="button" data-id="${esc(c.id)}" aria-current="${c.id===state.current}"><span class="${/past|referral/i.test(c.stage||"")?"past":""}">${healthDot(c)}${esc(c.short||c.name)}</span><span class="cnts"><span class="cb prog${prog[c.id] ? "" : " zero"}" title="${prog[c.id]||0} in progress">${prog[c.id]||0}</span><span class="cb done${counts[c.id] ? "" : " zero"}" title="${counts[c.id]||0} completed">${counts[c.id]||0}</span></span></button></li>`;
     const pL = prospC.filter(matchQ), aL = activeC.filter(matchQ), oL = otherC.filter(matchQ);
     $("#navList").innerHTML = ov; list.innerHTML = (pL.length ? grpLabel("Prospective") + pL.map(rowHtml).join("") : "") + (aL.length ? grpLabel(`Active in ${cyr}`) + aL.map(rowHtml).join("") : "") + (oL.length ? grpLabel("All other clients") + oL.map(rowHtml).join("") : "");
-    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__calendar"${state.current==="__calendar"?" selected":""}>Calendar</option><option value="__pipeline"${state.current==="__pipeline"?" selected":""}>Pipeline</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
-    { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __calendar: "Calendar", __pipeline: "Pipeline", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
+    pick.innerHTML = (state.clientView ? "" : `<option value="__home"${state.current==="__home"?" selected":""}>Home</option><option value="__billing"${state.current==="__billing"?" selected":""}>Financials</option><option value="__talent"${state.current==="__talent"?" selected":""}>Talent</option><option value="__calendar"${state.current==="__calendar"?" selected":""}>Calendar</option><option value="__pipeline"${state.current==="__pipeline"?" selected":""}>Pipeline</option><option value="__intel"${state.current==="__intel"?" selected":""}>Intelligence</option><option value="__reports"${state.current==="__reports"?" selected":""}>Reports</option>`) + sorted.map(c => `<option value="${esc(c.id)}"${c.id===state.current?" selected":""}>${esc(c.name)}</option>`).join("");
+    { const cur = state.clients.find(x => x.id === state.current); const ml = document.getElementById("mobileMenuLabel"); if (ml) ml.textContent = ({ __home: "Home", __billing: "Financials", __talent: "Talent", __calendar: "Calendar", __pipeline: "Pipeline", __intel: "Intelligence", __reports: "Reports" })[state.current] || (cur ? (cur.short || cur.name) : "Menu"); }
     $("#clientViewBtn").setAttribute("aria-checked", String(state.clientView));
   }
 
@@ -1002,7 +1018,7 @@ button.cal-du.late{cursor:pointer}
 
   function renderMain() {
     const main = $("#main");
-    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent" || state.current === "__reports" || state.current === "__calendar" || state.current === "__pipeline") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else if (state.current === "__reports") renderReports(); else if (state.current === "__calendar") renderCalendar(); else if (state.current === "__pipeline") renderPipeline(); else renderOverview(); return; } }
+    if (state.current === "__home" || state.current === "__billing" || state.current === "__talent" || state.current === "__reports" || state.current === "__calendar" || state.current === "__pipeline" || state.current === "__intel") { if (state.clientView) { state.current = state.clients[0]?.id || null; } else { if (state.current === "__home") renderHome(); else if (state.current === "__talent") renderTalent(); else if (state.current === "__reports") renderReports(); else if (state.current === "__calendar") renderCalendar(); else if (state.current === "__pipeline") renderPipeline(); else if (state.current === "__intel") renderIntel(); else renderOverview(); return; } }
     const c = state.clients.find(x => x.id === state.current);
     if (!c) {
       main.innerHTML = state.clients.length
@@ -1166,6 +1182,7 @@ button.cal-du.late{cursor:pointer}
         ${[...b.inv].sort((x,y)=>y.date.localeCompare(x.date) || String(y.num).localeCompare(String(x.num))).map(i => { const st = invStatus(i); return `<tr><td class="mono">${esc(i.date)}</td><td class="mono">${i.link ? `<a class="qb" href="${esc(i.link)}" target="_blank" rel="noopener" title="Open in QuickBooks">${esc(i.num)}</a>` : esc(i.num)}</td><td>${esc(i.desc)}</td><td>${esc(i.kind==="travel" ? "Travel" : ((c.workstreams||[]).find(w=>w.id===i.ws)?.name || "—"))}</td><td class="num">${money(i.amount)}</td><td class="num">${i.balance>0.005?money(i.balance):"—"}</td><td><span class="pill ${st[0]}">${esc(st[1])}</span></td></tr>`; }).join("")}
         </tbody></table></div>
       </section>` : ""}
+      ${intelSection(c)}
       ${commsSection(c)}
       </div>
 
@@ -1772,7 +1789,7 @@ button.cal-du.late{cursor:pointer}
     else if (!CAL.loaded) body = `<div class="cal-empty">Loading your calendar…</div>`;
     else if (!today.length) body = `<div class="cal-empty">No more meetings today.${next ? ` Next: <b>${esc(calDayLabel(next.s))} ${esc(calTime(next.s))}</b>, ${esc(next.title)}` : ""}</div>`;
     else body = today.slice(0, 6).map(calRow).join("") + (today.length > 6 ? `<button type="button" class="linkbtn cal-more" data-id-go="__calendar">${today.length - 6} more today</button>` : "");
-    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div>${mtgLogBox()}${dueStripLine()}${pipeStripLine()}</section>`;
+    return `<section class="cal-strip"><div class="section-head"><h2>Today's meetings</h2><span class="cal-strip-acts">${state.clientView ? "" : `<button type="button" class="linkbtn" data-cal-new>+ New event</button>`}<button type="button" class="linkbtn" data-id-go="__calendar">Open calendar</button></span></div><div class="cal-list">${body}</div>${mtgLogBox()}${dueStripLine()}${pipeStripLine()}${intelStripLine()}</section>`;
   }
   function calWeekGrid(ws) {
     const days = [...Array(7)].map((_, i) => calAdd(ws, i));
@@ -3114,6 +3131,75 @@ Rules:
     const t = setInterval(() => { const el = document.querySelector(`.rail [data-id="${CSS.escape(c)}"]`); if (el) { clearInterval(t); el.click(); } else if (++n > 40) clearInterval(t); }, 500);
   })();
 
+
+  /* ---------- Client intelligence (written by the client intelligence analyst) ---------- */
+  const INTEL = { signal: "", client: "", status: "open", show: 40, cshow: {} };
+  const SIG = { opportunity: ["active", "Opportunity"], risk: ["late", "Risk"], watch: ["planned", "Watch"], info: ["done", "Info"] };
+  const ITYPE = { news: "News", leadership: "Leadership", market: "Market", legislation: "Policy", event: "Event", org: "Organization", opening: "Opening", other: "Other" };
+  const intelOpen = i => !i.status || i.status === "new";
+  const intelSort = (a, b) => String(b.date || "").localeCompare(String(a.date || "")) || String(b.found || "").localeCompare(String(a.found || ""));
+  async function intelLoad() {
+    if (INTEL.loading || INTEL.server === false) return; INTEL.loading = true;
+    try { const r = await gs("getIntel"); const list = Array.isArray(r) ? r : (r && r.items) || []; state.intel = list.filter(i => i && i.client && i.title).map(i => Object.assign({ _id: i.id }, i)); if (r && r.meta) state.intelMeta = r.meta; INTEL.server = true; render(); }
+    catch (e) { INTEL.server = false; if (state.current === "__intel") renderMain(); }
+    finally { INTEL.loading = false; }
+  }
+  const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? u : "";
+  function intelCard(i, showClient) {
+    const c = state.clients.find(x => x.id === i.client);
+    const s = SIG[i.signal] || SIG.info, done = !intelOpen(i), can = state.canEdit && !state.clientView, url = safeUrl(i.url);
+    const stLab = i.status === "actioned" ? "Acted on" : i.status === "dismissed" ? "Dismissed" : "Reviewed";
+    return `<li class="in-row${done ? " in-done" : ""}">
+      <div class="in-top"><span class="pill ${s[0]}">${s[1]}</span><span class="in-meta">${i.date ? esc(fmtDay(i.date) + " " + String(i.date).slice(0, 4)) : ""}${i.type ? " · " + esc(ITYPE[i.type] || i.type) : ""}${showClient && c ? ` · <button type="button" class="linkbtn" data-go="${esc(c.id)}">${esc(c.short || c.name)}</button>` : ""}</span></div>
+      <div class="in-t">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(i.title)} ↗</a>` : esc(i.title)}</div>
+      ${i.summary ? `<div class="in-s">${esc(i.summary)}</div>` : ""}
+      ${i.action ? `<div class="in-a"><small>Suggested move</small><span>${esc(i.action)}</span></div>` : ""}
+      <div class="in-f"><span class="in-src">${esc(i.source || "")}</span>${can ? (done ? `<span class="in-st">${esc(stLab)}</span><button type="button" class="linkbtn" data-intel-st="new" data-intel-id="${esc(i._id)}">Reopen</button>` : `<button type="button" class="btn" data-intel-st="actioned" data-intel-id="${esc(i._id)}">Acted on</button><button type="button" class="btn" data-intel-st="reviewed" data-intel-id="${esc(i._id)}">Reviewed</button><button type="button" class="linkbtn" data-intel-st="dismissed" data-intel-id="${esc(i._id)}">Dismiss</button>`) : ""}</div>
+    </li>`;
+  }
+  function renderIntel() {
+    const main = $("#main"), all = [...state.intel].sort(intelSort);
+    const wk = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    const open = all.filter(intelOpen);
+    const nOpp = open.filter(i => i.signal === "opportunity").length, nRisk = open.filter(i => i.signal === "risk").length;
+    const nWeek = all.filter(i => String(i.found || i.date || "").slice(0, 10) >= wk).length;
+    const list = all.filter(i => (INTEL.status === "all" || (INTEL.status === "open" ? intelOpen(i) : !intelOpen(i))) && (!INTEL.signal || i.signal === INTEL.signal) && (!INTEL.client || i.client === INTEL.client));
+    const meta = state.intelMeta || {};
+    const cw = [...new Set(all.map(i => i.client))].map(id => state.clients.find(c => c.id === id)).filter(Boolean).sort((a, b) => (a.short || a.name).localeCompare(b.short || b.name));
+    const chip = (attr, val, label, on) => `<button type="button" ${attr}="${esc(val)}" aria-pressed="${on}">${esc(label)}</button>`;
+    const last = meta.lastRun ? new Date(meta.lastRun) : null;
+    main.innerHTML = `<div class="top"><header class="head"><div style="min-width:0">
+        <h1>Intelligence</h1>
+        <p class="lede">News, leadership changes, market data and policy moves for every client, gathered by the client intelligence analyst. Opportunities are openings for new work; risks are things to get ahead of.</p>
+        <div class="in-run">${last && !isNaN(last) ? `Last scan ${esc(last.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}${meta.scanned ? ` · ${esc(String(meta.scanned))} client${meta.scanned == 1 ? "" : "s"} checked` : ""}${meta.found != null ? ` · ${esc(String(meta.found))} new item${meta.found == 1 ? "" : "s"}` : ""}` : "The first scan runs on the next weekday morning."}</div>
+      </div></header>
+      ${INTEL.server === false ? `<div class="banner">This version of Pulse needs a one-time server update before it can show intelligence. Until then, use the Claude version of Pulse.</div>` : ""}${INTEL.err ? `<div class="banner">${esc(INTEL.err)}</div>` : ""}
+      <div class="stats"><div class="stat"><div class="n">${nOpp}</div><div class="l">open opportunities</div></div><div class="stat"><div class="n ${nRisk ? "warn" : ""}">${nRisk}</div><div class="l">open risks</div></div><div class="stat"><div class="n">${open.length}</div><div class="l">waiting for review</div></div><div class="stat"><div class="n">${nWeek}</div><div class="l">found in the last 7 days</div></div></div></div>
+      <section class="section"><div class="filters">${chip("data-in-status", "open", "To review", INTEL.status === "open")}${chip("data-in-status", "done", "Handled", INTEL.status === "done")}${chip("data-in-status", "all", "All", INTEL.status === "all")}<span class="cm-sep"></span>${chip("data-in-sig", "", "Every signal", !INTEL.signal)}${Object.entries(SIG).map(([k, v]) => chip("data-in-sig", k, v[1], INTEL.signal === k)).join("")}${cw.length ? `<select class="cm-pick" data-in-client aria-label="Client"><option value="">All clients</option>${cw.map(c => `<option value="${esc(c.id)}"${INTEL.client === c.id ? " selected" : ""}>${esc(c.short || c.name)}</option>`).join("")}</select>` : ""}</div>
+      ${list.length ? `<ul class="in-list">${list.slice(0, INTEL.show).map(i => intelCard(i, true)).join("")}</ul>${list.length > INTEL.show ? `<button type="button" class="linkbtn" data-in-more>Show ${Math.min(40, list.length - INTEL.show)} more</button>` : ""}` : `<div class="empty">${all.length ? "Nothing matches this filter." : "No intelligence yet. The analyst's first scan will fill this in."}</div>`}</section>`;
+  }
+  function intelSection(c) {
+    if (state.clientView || !c) return "";
+    const L = state.intel.filter(i => i.client === c.id).sort(intelSort), open = L.filter(intelOpen);
+    const show = INTEL.cshow[c.id] ? L : (open.length ? open : L).slice(0, 5);
+    return `<section class="section in-sec"><div class="section-head"><h2>Intelligence</h2><span class="note">${L.length ? `${open.length} to review of ${L.length} · from the client intelligence analyst · internal only` : "Nothing found yet · internal only"}</span></div>
+      ${L.length ? `<ul class="in-list">${show.map(i => intelCard(i, false)).join("")}</ul>${show.length < L.length ? `<button type="button" class="linkbtn" data-in-all="${esc(c.id)}">Show all ${L.length}</button>` : ""}` : `<div class="cal-m">The analyst checks this client every week and posts anything worth knowing here.</div>`}</section>`;
+  }
+  function intelStripLine() {
+    if (state.clientView) return "";
+    const open = state.intel.filter(intelOpen); if (!open.length) return "";
+    const o = open.filter(i => i.signal === "opportunity").length, r = open.filter(i => i.signal === "risk").length;
+    return `<div class="due-strip"><span>Intelligence: <b>${open.length} to review</b>${o ? ` · ${o} opportunit${o === 1 ? "y" : "ies"}` : ""}${r ? ` · <b class="late">${r} risk${r === 1 ? "" : "s"}</b>` : ""}</span><button type="button" class="linkbtn" data-id-go="__intel">Open intelligence</button></div>`;
+  }
+  document.addEventListener("click", async e => {
+    const st = e.target.closest("[data-intel-st]");
+    if (st) { if (!state.canEdit) return; st.disabled = true; const id = st.dataset.intelId, val = st.dataset.intelSt; try { await gs("setIntelStatus", id, val); const it = state.intel.find(x => x._id === id); if (it) it.status = val; render(); } catch (err) { st.disabled = false; INTEL.err = /unknown|not.*function|no such/i.test(err.message) ? "Marking items needs the one-time server update." : err.message; renderMain(); } return; }
+    const s1 = e.target.closest("[data-in-status]"); if (s1) { INTEL.status = s1.dataset.inStatus; INTEL.show = 40; renderMain(); return; }
+    const s2 = e.target.closest("[data-in-sig]"); if (s2) { INTEL.signal = s2.dataset.inSig; INTEL.show = 40; renderMain(); return; }
+    if (e.target.closest("[data-in-more]")) { INTEL.show += 40; renderMain(); return; }
+    const a = e.target.closest("[data-in-all]"); if (a) { INTEL.cshow[a.dataset.inAll] = true; renderMain(); }
+  });
+  document.addEventListener("change", e => { const s = e.target.closest && e.target.closest("[data-in-client]"); if (s) { INTEL.client = s.value; INTEL.show = 40; renderMain(); } });
   function render(){ renderRail(); renderMain(); chatSync(); }
 
   function openItem(item) {
@@ -3252,7 +3338,9 @@ Rules:
     d = Object.assign({}, d, { clients: (d.clients || []).map(c => { const x = Object.assign({}, c); if (x.logoId && logoCache[x.logoId]) x.logo = logoCache[x.logoId]; return x; }) });
     setTimeout(fetchLogos_, 0);
     state.clients = d.clients; state.items = d.items; state.invoices = d.invoices || []; state.overrides = d.overrides || []; state.searches = d.searches || []; state.canEdit = d.canEdit;
-    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && state.current !== "__calendar" && state.current !== "__pipeline" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
+    if (Array.isArray(d.intel)) { state.intel = d.intel.filter(i => i && i.client && i.title).map(i => Object.assign({ _id: i.id }, i)); INTEL.server = true; } else setTimeout(intelLoad, 0);
+    if (state.intelMeta == null && d.intelMeta) state.intelMeta = d.intelMeta;
+    if (state.current !== "__billing" && state.current !== "__home" && state.current !== "__talent" && state.current !== "__reports" && state.current !== "__calendar" && state.current !== "__pipeline" && state.current !== "__intel" && !state.clients.find(c => c.id === state.current)) state.current = state.clients[0]?.id || null;
     render();
   }
 
